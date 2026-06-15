@@ -30,30 +30,29 @@
   .nav-logo { font-size: 17px; font-weight: 700; letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; color: var(--accent); }
   .nav-logo span { font-size: 20px; }
   .nav-actions { display: flex; align-items: center; gap: 10px; }
-  .btn-edit { background: var(--surface2); color: var(--accent); border: 1px solid var(--border); }
-  .btn-edit:hover { background: var(--surface3); border-color: var(--accent); }
-  .edit-input { background: var(--surface2); border: 1px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; width: 100%; }
-  .edit-input:focus { box-shadow: 0 0 0 2px rgba(124,106,247,.15); }
-  tr.editing td { background: rgba(124,106,247,.04); }
-  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  /* ===== BUTTONS ===== */
+  .btn { display: inline-flex; align-items: center; justify-content: center; padding: 7px 16px; border-radius: 7px; border: 1px solid var(--border); cursor: pointer; font-size: 13px; font-weight: 600; font-family: var(--font); transition: all .15s; background: transparent; color: var(--text2); }
+  .btn:hover { background: var(--surface2); color: var(--text); }
+  .btn-ghost { background: transparent; color: var(--text2); border-color: var(--border); }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--text3); }
   .btn-ghost.nav-active { background: var(--surface2); color: var(--accent); border-color: var(--accent); }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: var(--accent2); }
-  .btn-primary.nav-active { background: var(--accent2); box-shadow: 0 2px 8px rgba(124,106,247,.35); }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn-primary.nav-active { background: var(--accent2); border-color: var(--accent2); box-shadow: 0 2px 8px rgba(124,106,247,.35); }
+  .btn-danger { background: #fff; color: var(--danger); border-color: var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-success { background: #fff; color: var(--success); border-color: var(--success); }
+  .btn-success:hover { background: var(--success); color: #fff; }
+  .btn-edit { background: transparent; color: var(--accent); border-color: var(--border); }
+  .btn-edit:hover { background: var(--surface2); border-color: var(--accent); }
   .btn-sm { padding: 5px 11px; font-size: 12px; }
   .nav-btn { border-radius: 20px; padding: 6px 18px; }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-danger:hover { opacity: .85; }
-  .btn-success { background: var(--success); color: #fff; }
-  .btn-success:hover { opacity: .85; }
-  .btn-edit { background: var(--surface2); color: var(--accent); border: 1px solid var(--border); }
-  .btn-edit:hover { background: var(--surface3); border-color: var(--accent); }
+  .lang-btn { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; font-family: var(--font); }
+  .lang-btn:hover { background: var(--surface2); color: var(--text); }
+  .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .edit-input { background: var(--surface); border: 1px solid var(--accent); border-radius: 6px; padding: 5px 8px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; min-width: 80px; }
   .edit-input:focus { box-shadow: 0 0 0 2px rgba(124,106,247,.15); }
   tr.editing td { background: rgba(124,106,247,.04); }
-  .lang-btn { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
-  .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
   /* PAGES */
   .page { display: none; padding: 24px; }
