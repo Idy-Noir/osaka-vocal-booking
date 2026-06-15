@@ -649,39 +649,40 @@ let state = {
   courseLimits: [] // [{id, name, monthlyHours}]
 };
 
-// ===== STORAGE =====
-async function storageGet(key) {
-  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; } catch { return null; }
+// ===== STORAGE (localStorage) =====
+function storageGet(key) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; }
 }
-async function storageSet(key, value) {
-  try { await window.storage.set(key, JSON.stringify(value)); } catch {}
+function storageSet(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
-async function loadState() {
-  const [b,s,i,st,n,cl] = await Promise.all([
-    storageGet(STORAGE_KEYS.bookings), storageGet(STORAGE_KEYS.students),
-    storageGet(STORAGE_KEYS.instructors), storageGet(STORAGE_KEYS.settings),
-    storageGet(STORAGE_KEYS.notices), storageGet(STORAGE_KEYS.courseLimits)
-  ]);
-  if (b) state.bookings = b;
-  if (s) state.students = s;
-  if (i) state.instructors = i;
-  if (st) state.settings = {...state.settings, ...st};
-  if (n) state.notices = n;
+function loadState() {
+  const b  = storageGet(STORAGE_KEYS.bookings);
+  const s  = storageGet(STORAGE_KEYS.students);
+  const i  = storageGet(STORAGE_KEYS.instructors);
+  const st = storageGet(STORAGE_KEYS.settings);
+  const n  = storageGet(STORAGE_KEYS.notices);
+  const cl = storageGet(STORAGE_KEYS.courseLimits);
+  if (b)  state.bookings    = b;
+  if (s)  state.students    = s;
+  if (i)  state.instructors = i;
+  if (st) state.settings    = {...state.settings, ...st};
+  if (n)  state.notices     = n;
   if (cl) state.courseLimits = cl;
   renderAll();
 }
-const saveBookings = () => storageSet(STORAGE_KEYS.bookings, state.bookings);
-const saveStudents = () => storageSet(STORAGE_KEYS.students, state.students);
-const saveInstructors = () => storageSet(STORAGE_KEYS.instructors, state.instructors);
-const saveNotices = () => storageSet(STORAGE_KEYS.notices, state.notices);
+const saveBookings     = () => storageSet(STORAGE_KEYS.bookings,     state.bookings);
+const saveStudents     = () => storageSet(STORAGE_KEYS.students,     state.students);
+const saveInstructors  = () => storageSet(STORAGE_KEYS.instructors,  state.instructors);
+const saveNotices      = () => storageSet(STORAGE_KEYS.notices,      state.notices);
 const saveCourseLimits = () => storageSet(STORAGE_KEYS.courseLimits, state.courseLimits);
 
-async function saveSettings() {
+function saveSettings() {
   state.settings.maxSessionHours = parseFloat(document.getElementById('maxSessionHours').value) || 2;
-  state.settings.maxDailyHours = parseFloat(document.getElementById('maxDailyHours').value) || 4;
-  state.settings.openTime = document.getElementById('openTime').value;
+  state.settings.maxDailyHours   = parseFloat(document.getElementById('maxDailyHours').value)   || 4;
+  state.settings.openTime  = document.getElementById('openTime').value;
   state.settings.closeTime = document.getElementById('closeTime').value;
-  await storageSet(STORAGE_KEYS.settings, state.settings);
+  storageSet(STORAGE_KEYS.settings, state.settings);
   renderSchedule(); populateTimeSelects(); renderLessonCheckboxes();
   showToast(t('settingsSaved'), 'success');
 }
@@ -1831,8 +1832,8 @@ function showToast(msg, type='') {
 function renderAll() { renderSchedule(); applyI18n(); populateTimeSelects(); renderNoticeBanner(); }
 
 // ===== INIT =====
-(async function init() {
-  await loadState();
+(function init() {
+  loadState();
   document.getElementById('lessonDate').value = dateKey(new Date());
   document.getElementById('blockDate').value = dateKey(new Date());
   applyI18n();
