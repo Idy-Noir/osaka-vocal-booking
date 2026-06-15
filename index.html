@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>보컬 연습실 예약 시스템</title>
+<style>
+  :root {
+    --bg: #fefefe;
+    --surface: #ffffff;
+    --surface2: #f5f4fb;
+    --surface3: #eeecfa;
+    --border: #e0ddf5;
+    --accent: #7c6af7;
+    --accent2: #6253e1;
+    --text: #1a1730;
+    --text2: #6b6490;
+    --text3: #b0abc8;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --radius: 10px;
+    --font: 'Pretendard', 'Noto Sans KR', 'Noto Sans JP', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  /* NAV */
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 6px rgba(124,106,247,.07); }
+  .nav-logo { font-size: 17px; font-weight: 700; letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; color: var(--accent); }
+  .nav-logo span { font-size: 20px; }
+  .nav-actions { display: flex; align-items: center; gap: 10px; }
+  .btn-edit { background: var(--surface2); color: var(--accent); border: 1px solid var(--border); }
+  .btn-edit:hover { background: var(--surface3); border-color: var(--accent); }
+  .edit-input { background: var(--surface2); border: 1px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; width: 100%; }
+  .edit-input:focus { box-shadow: 0 0 0 2px rgba(124,106,247,.15); }
+  tr.editing td { background: rgba(124,106,247,.04); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn-ghost.nav-active { background: var(--surface2); color: var(--accent); border-color: var(--accent); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary.nav-active { background: var(--accent2); box-shadow: 0 2px 8px rgba(124,106,247,.35); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .nav-btn { border-radius: 20px; padding: 6px 18px; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { opacity: .85; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { opacity: .85; }
+  .btn-edit { background: var(--surface2); color: var(--accent); border: 1px solid var(--border); }
+  .btn-edit:hover { background: var(--surface3); border-color: var(--accent); }
+  .edit-input { background: var(--surface); border: 1px solid var(--accent); border-radius: 6px; padding: 5px 8px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; min-width: 80px; }
+  .edit-input:focus { box-shadow: 0 0 0 2px rgba(124,106,247,.15); }
+  tr.editing td { background: rgba(124,106,247,.04); }
+  .lang-btn { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+  .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* PAGES */
+  .page { display: none; padding: 24px; }
+  .page.active { display: block; }
+
+  /* DATE NAV */
+  .date-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .date-nav h2 { font-size: 18px; font-weight: 700; }
+  .date-nav-btns { display: flex; gap: 6px; }
+
+  /* NOTICE BANNER */
+  .notice-banner { background: linear-gradient(135deg, #f0eefe 0%, #e8e3fd 100%); border: 1.5px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px; }
+  .notice-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .notice-content { flex: 1; }
+  .notice-header { display: flex; align-items: center; justify-content: space-between; }
+  .notice-title { font-size: 12px; font-weight: 800; color: var(--accent); letter-spacing: .5px; text-transform: uppercase; }
+  .notice-title-wrap { display: flex; align-items: center; gap: 8px; }
+  .notice-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .notice-list li { font-size: 13px; color: var(--text); font-weight: 500; display: flex; align-items: baseline; gap: 8px; line-height: 1.5; }
+  .notice-list li::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; position: relative; top: -1px; display: inline-block; }
+  .notice-toggle-btn { background: rgba(124,106,247,.12); border: none; cursor: pointer; color: var(--accent); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 5px; transition: all .15s; font-family: var(--font); white-space: nowrap; }
+  .notice-toggle-btn:hover { background: rgba(124,106,247,.22); }
+
+  /* SCHEDULE TABLE */
+  .schedule-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(124,106,247,.06); }
+  .schedule-table { border-collapse: collapse; width: 100%; min-width: 700px; }
+  .schedule-table th { background: var(--surface2); padding: 10px 14px; font-size: 13px; font-weight: 800; color: var(--accent); text-align: center; border-bottom: 2px solid var(--border); white-space: nowrap; position: sticky; top: 0; z-index: 10; letter-spacing: .3px; }
+  .schedule-table th:first-child { color: var(--text3); font-weight: 600; font-size: 11px; }
+  .schedule-table th .room-num { font-size: 20px; font-weight: 900; display: block; line-height: 1; color: var(--accent); }
+  .schedule-table th .room-label { font-size: 10px; color: var(--text2); font-weight: 600; display: block; margin-top: 2px; }
+  .schedule-table td { border: 1px solid var(--border); padding: 0; height: 36px; min-width: 130px; vertical-align: middle; position: relative; }
+  .time-col { background: var(--surface2); padding: 6px 12px; font-size: 12px; color: var(--text2); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: center; font-weight: 700; min-width: 70px !important; }
+  .slot { height: 36px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; transition: all .12s; position: relative; overflow: hidden; }
+  .slot.empty:hover { background: rgba(124,106,247,.10); }
+  .slot.booked { cursor: pointer; }
+  .slot.booked:hover { filter: brightness(1.06); }
+  .slot-label { padding: 2px 6px; text-align: center; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+  /* LESSON SLOT — distinct styled block */
+  .slot.lesson-slot { flex-direction: column; align-items: flex-start; justify-content: center; padding: 0; position: relative; }
+  .slot.lesson-slot::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: rgba(255,255,255,.55); border-radius: 0 2px 2px 0; flex-shrink: 0; }
+  .lesson-slot-inner { display: flex; flex-direction: column; padding: 4px 8px 4px 12px; width: 100%; gap: 1px; overflow: hidden; }
+  .lesson-slot-tag { font-size: 9px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; opacity: .8; line-height: 1; }
+  .lesson-slot-name { font-size: 12px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lesson-slot-time { font-size: 9px; font-weight: 500; opacity: .75; line-height: 1; }
+
+  /* STUDENT SLOT */
+  .slot.student-slot { flex-direction: column; align-items: flex-start; justify-content: center; padding: 0; }
+  .slot.student-slot::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: rgba(0,0,0,.18); }
+  .student-slot-inner { display: flex; flex-direction: column; padding: 3px 8px 3px 11px; width: 100%; gap: 1px; overflow: hidden; }
+  .student-slot-name { font-size: 12px; font-weight: 700; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .student-slot-course { font-size: 9px; font-weight: 500; opacity: .72; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* 30-min divider lines inside multi-slot blocks */
+  .slot-divider { position: absolute; left: 4px; right: 0; height: 1px; background: rgba(255,255,255,.35); pointer-events: none; z-index: 2; }
+
+  /* BOOKING MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,23,48,.45); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; width: 440px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(124,106,247,.15); }
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 5px; letter-spacing: .2px; }
+  .form-control { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; color: var(--text); font-size: 13px; outline: none; transition: border .15s; font-family: var(--font); }
+  .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,106,247,.12); }
+  select.form-control option { background: var(--surface); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .slot-info { background: var(--surface2); border-radius: 7px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; border-left: 3px solid var(--accent); }
+  .slot-info span { color: var(--text2); font-size: 12px; }
+
+  /* TIME SLOT BUTTONS */
+  .time-slot-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .time-slot-btn { padding: 9px 18px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; font-size: 14px; font-weight: 700; transition: all .13s; font-family: var(--font); white-space: nowrap; }
+  .time-slot-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: rgba(124,106,247,.06); }
+  .time-slot-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(124,106,247,.3); }
+  .time-slot-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .time-slot-btn .tsb-time { font-variant-numeric: tabular-nums; }
+  .time-slot-btn .tsb-dur { font-size: 11px; font-weight: 500; opacity: .75; }
+  .time-slot-btn.selected .tsb-dur { opacity: .85; }
+  .slot-selected-summary { margin-top: 8px; padding: 8px 12px; background: rgba(124,106,247,.08); border-radius: 7px; font-size: 12px; color: var(--accent); font-weight: 700; min-height: 30px; }
+
+  /* LESSON CHECKBOX GRID */
+  .lesson-checkbox-grid { display: flex; flex-direction: column; gap: 4px; max-height: 340px; overflow-y: auto; padding: 4px 0; }
+  .lesson-cb-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; transition: background .1s; }
+  .lesson-cb-row:hover { background: var(--surface2); }
+  .lesson-cb-row input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; }
+  .lesson-cb-row label { font-size: 13px; color: var(--text); cursor: pointer; font-weight: 500; }
+  .lesson-cb-row.checked { background: rgba(124,106,247,.10); }
+  .lesson-cb-row.conflict label { color: var(--text3); text-decoration: line-through; }
+  .lesson-cb-row.conflict { opacity: .5; cursor: not-allowed; }
+  .lesson-cb-row.conflict input { pointer-events: none; }
+  .cb-section-label { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: .4px; padding: 6px 8px 2px; }
+
+  /* ADMIN */
+  .admin-tabs { display: flex; gap: 4px; margin-bottom: 22px; background: var(--surface2); padding: 4px; border-radius: 9px; width: fit-content; border: 1px solid var(--border); flex-wrap: wrap; }
+  .admin-tab { padding: 7px 18px; border-radius: 6px; border: none; background: transparent; color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; font-family: var(--font); }
+  .admin-tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(124,106,247,.3); }
+  .admin-tab:not(.active):hover { background: var(--surface3); color: var(--text); }
+  .admin-panel { display: none; }
+  .admin-panel.active { display: block; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(124,106,247,.05); }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: var(--text); }
+  .table-wrap { overflow-x: auto; }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data-table th { background: var(--surface2); padding: 8px 12px; text-align: left; font-size: 12px; color: var(--text2); font-weight: 700; border-bottom: 2px solid var(--border); }
+  table.data-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  table.data-table tr:last-child td { border-bottom: none; }
+  table.data-table tr:hover td { background: var(--surface2); }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+  .color-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+  .color-input-wrap { display: flex; align-items: center; gap: 8px; }
+  input[type="color"] { width: 36px; height: 28px; padding: 2px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface2); cursor: pointer; }
+  .inline-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  .inline-form .form-group { margin-bottom: 0; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap; }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 13px; font-weight: 700; color: var(--text); }
+  .setting-desc { font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .number-input-wrap { display: flex; align-items: center; gap: 6px; }
+  .number-input-wrap input { width: 70px; text-align: center; }
+  .empty-state { text-align: center; padding: 36px 20px; color: var(--text3); font-size: 13px; }
+
+  /* COURSE LIMITS TABLE */
+  .course-limits-wrap { margin-top: 12px; }
+  .course-limit-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .course-limit-row:last-child { border-bottom: none; }
+  .course-limit-name { font-size: 13px; font-weight: 600; flex: 1; min-width: 120px; }
+  .course-limit-input-wrap { display: flex; align-items: center; gap: 6px; }
+
+  /* PAGINATION */
+  .pagination { display: flex; align-items: center; gap: 6px; margin-top: 14px; justify-content: center; flex-wrap: wrap; }
+  .page-btn { padding: 5px 11px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; font-family: var(--font); }
+  .page-btn:hover { background: var(--surface2); color: var(--text); }
+  .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .page-info { font-size: 12px; color: var(--text2); padding: 0 4px; }
+
+  /* USAGE TABLE */
+  .usage-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+  .usage-bar { flex: 1; height: 7px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+  .usage-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width .3s; }
+  .usage-bar-fill.over { background: var(--danger); }
+  .usage-hours { font-size: 12px; color: var(--text2); white-space: nowrap; }
+
+  /* LOGIN */
+  .login-wrap { max-width: 360px; margin: 60px auto; }
+  .login-wrap .card { text-align: center; box-shadow: 0 4px 24px rgba(124,106,247,.12); }
+  .login-wrap h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .login-wrap p { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .error-msg { color: var(--danger); font-size: 12px; margin-top: 8px; min-height: 18px; }
+
+  /* PIN DISPLAY */
+  .pin-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 24px; }
+  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface2); transition: all .15s; }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+
+  /* KEYPAD */
+  .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 240px; margin: 0 auto; }
+  .kp-btn { aspect-ratio: 1; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); font-size: 20px; font-weight: 700; cursor: pointer; transition: all .12s; display: flex; align-items: center; justify-content: center; font-family: var(--font); box-shadow: 0 1px 4px rgba(124,106,247,.07); user-select: none; }
+  .kp-btn:hover { background: var(--surface3); border-color: var(--accent); color: var(--accent); transform: scale(1.04); }
+  .kp-btn:active { transform: scale(.96); }
+  .kp-btn.kp-zero { grid-column: 2; }
+  .kp-btn.kp-del { background: transparent; border-color: transparent; color: var(--text2); font-size: 16px; box-shadow: none; }
+  .kp-btn.kp-del:hover { color: var(--danger); background: transparent; transform: scale(1.04); }
+  .kp-btn.kp-enter { background: var(--accent); border-color: var(--accent); color: #fff; font-size: 13px; font-weight: 800; letter-spacing: .3px; }
+  .kp-btn.kp-enter:hover { background: var(--accent2); border-color: var(--accent2); }
+
+  /* SORT */
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--accent); }
+  th.sortable::after { content: ' ↕'; color: var(--text3); }
+  th.sortable.asc::after { content: ' ↑'; color: var(--accent); }
+  th.sortable.desc::after { content: ' ↓'; color: var(--accent); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 12px 18px; font-size: 13px; font-weight: 600; z-index: 999; display: flex; align-items: center; gap: 8px; transform: translateY(80px); opacity: 0; transition: all .25s; box-shadow: 0 4px 20px rgba(0,0,0,.12); }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--success); color: var(--success); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .nav { padding: 0 14px; }
+    .page { padding: 14px; }
+    .modal { padding: 20px; }
+    .admin-tabs { flex-wrap: wrap; }
+  }
+
+  @keyframes pinShake {
+    0%,100% { transform: translateX(0); }
+    15% { transform: translateX(-8px); }
+    30% { transform: translateX(8px); }
+    45% { transform: translateX(-6px); }
+    60% { transform: translateX(6px); }
+    75% { transform: translateX(-3px); }
+    90% { transform: translateX(3px); }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo"><span>🎤</span> <span id="navTitle">보컬 연습실 예약</span></div>
+  <div class="nav-actions">
+    <button class="lang-btn active" id="btnKo" onclick="setLang('ko')">한국어</button>
+    <button class="lang-btn" id="btnJa" onclick="setLang('ja')">日本語</button>
+    <button class="btn btn-ghost btn-sm nav-btn nav-active" onclick="goPage('booking')" id="navBooking">예약표</button>
+    <button class="btn btn-primary btn-sm nav-btn" onclick="goPage('admin')" id="navAdmin">관리자</button>
+  </div>
+</nav>
+
+<!-- BOOKING PAGE -->
+<div class="page active" id="pageBooking">
+  <div class="notice-banner" id="noticeBanner">
+    <div class="notice-icon">📋</div>
+    <div class="notice-content">
+      <div class="notice-header">
+        <div class="notice-title-wrap">
+          <span class="notice-title" id="noticeTitle">이용 안내</span>
+        </div>
+        <button class="notice-toggle-btn" id="noticeToggleBtn" onclick="toggleNotice()">접기 ▲</button>
+      </div>
+      <ul class="notice-list" id="noticeList"></ul>
+    </div>
+  </div>
+  <div class="date-nav">
+    <div class="date-nav-btns">
+      <button class="btn btn-ghost btn-sm" onclick="changeDate(-1)">◀</button>
+      <button class="btn btn-ghost btn-sm" onclick="changeDate(1)">▶</button>
+    </div>
+    <h2 id="dateLabel"></h2>
+    <button class="btn btn-ghost btn-sm" onclick="goToday()" id="btnToday">오늘</button>
+  </div>
+  <div class="schedule-wrap">
+    <table class="schedule-table" id="scheduleTable"></table>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN PAGE -->
+<div class="page" id="pageAdminLogin">
+  <div class="login-wrap">
+    <div class="card">
+      <h2 id="adminLoginTitle">관리자 로그인</h2>
+      <p id="adminLoginDesc">비밀번호를 입력하세요</p>
+      <!-- PIN dots display -->
+      <div class="pin-display" id="pinDisplay"></div>
+      <!-- Keypad -->
+      <div class="keypad">
+        <button class="kp-btn" onclick="kpPress('1')">1</button>
+        <button class="kp-btn" onclick="kpPress('2')">2</button>
+        <button class="kp-btn" onclick="kpPress('3')">3</button>
+        <button class="kp-btn" onclick="kpPress('4')">4</button>
+        <button class="kp-btn" onclick="kpPress('5')">5</button>
+        <button class="kp-btn" onclick="kpPress('6')">6</button>
+        <button class="kp-btn" onclick="kpPress('7')">7</button>
+        <button class="kp-btn" onclick="kpPress('8')">8</button>
+        <button class="kp-btn" onclick="kpPress('9')">9</button>
+        <button class="kp-btn kp-del" onclick="kpDelete()">⌫</button>
+        <button class="kp-btn kp-zero" onclick="kpPress('0')">0</button>
+        <button class="kp-btn kp-enter" onclick="doAdminLogin()" id="adminLoginBtn">OK</button>
+      </div>
+      <div class="error-msg" id="loginError"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="pageAdmin">
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchAdminTab('bookings')" id="tabBookings">예약 관리</button>
+    <button class="admin-tab" onclick="switchAdminTab('students')" id="tabStudents">수강생 관리</button>
+    <button class="admin-tab" onclick="switchAdminTab('instructors')" id="tabInstructors">강사 관리</button>
+    <button class="admin-tab" onclick="switchAdminTab('settings')" id="tabSettings">설정</button>
+    <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="doLogout()" id="btnLogout">로그아웃</button>
+  </div>
+
+  <!-- BOOKINGS PANEL -->
+  <div class="admin-panel active" id="panelBookings">
+    <!-- LESSON BOOKING -->
+    <div class="card">
+      <div class="card-title">📅 <span id="adminBookingTitle">강사 레슨 예약</span></div>
+      <div class="inline-form" style="margin-bottom:16px; align-items:flex-start;">
+        <div class="form-group"><label id="lblLessonDate">날짜</label><input type="date" class="form-control" id="lessonDate" style="width:160px" onchange="renderLessonCheckboxes()"></div>
+        <div class="form-group"><label id="lblLessonRoom">연습실</label>
+          <select class="form-control" id="lessonRoom" style="width:130px" onchange="renderLessonCheckboxes()">
+            <option value="1">연습실 1</option><option value="2">연습실 2</option>
+            <option value="3">연습실 3</option><option value="4">연습실 4</option><option value="5">연습실 5</option>
+          </select>
+        </div>
+        <div class="form-group"><label id="lblLessonInstructor">강사</label>
+          <select class="form-control" id="lessonInstructor" style="width:130px"></select>
+        </div>
+        <div class="form-group" style="align-self:flex-end"><button class="btn btn-primary" onclick="addLessonBooking()" id="btnAddLesson">예약 등록</button></div>
+      </div>
+      <div class="form-group">
+        <label id="lblLessonSlots">시간 선택 (30분 단위)</label>
+        <div class="lesson-checkbox-grid" id="lessonCheckboxGrid"></div>
+      </div>
+    </div>
+
+    <!-- BLOCK TIME BOOKING -->
+    <div class="card">
+      <div class="card-title">🚫 <span id="blockTitle">이용 불가 시간 설정</span></div>
+      <div class="inline-form" style="margin-bottom:16px; align-items:flex-start;">
+        <div class="form-group"><label id="lblBlockDate">날짜</label><input type="date" class="form-control" id="blockDate" style="width:160px" onchange="renderBlockCheckboxes()"></div>
+        <div class="form-group"><label id="lblBlockRoom">연습실</label>
+          <select class="form-control" id="blockRoom" style="width:130px" onchange="renderBlockCheckboxes()">
+            <option value="1">연습실 1</option><option value="2">연습실 2</option>
+            <option value="3">연습실 3</option><option value="4">연습실 4</option><option value="5">연습실 5</option>
+          </select>
+        </div>
+        <div class="form-group" style="align-self:flex-end"><button class="btn btn-primary" onclick="addBlockBooking()" id="btnAddBlock">등록</button></div>
+      </div>
+      <div class="form-group">
+        <label id="lblBlockSlots">시간 선택 (30분 단위)</label>
+        <div class="lesson-checkbox-grid" id="blockCheckboxGrid"></div>
+      </div>
+    </div>
+
+    <!-- USAGE SUMMARY -->
+    <div class="card">
+      <div class="card-title">📊 <span id="allBookingsTitle">수강생별 연습시간 현황</span></div>
+      <div class="inline-form" style="margin-bottom:14px; gap:12px;">
+        <div class="form-group" style="margin-bottom:0">
+          <label id="lblUsageMonth">기간</label>
+          <input type="month" class="form-control" id="usageMonth" style="width:160px" oninput="renderUsageTable()">
+        </div>
+        <div class="form-group" style="margin-bottom:0; align-self:flex-end;">
+          <button class="btn btn-ghost btn-sm" onclick="setUsageThisMonth()" id="btnThisMonth">이번 달</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th id="thUsageName">이름</th>
+            <th id="thUsageCourse">코스</th>
+            <th id="thUsageInst">담당 강사</th>
+            <th id="thUsageTotal">총 연습시간</th>
+            <th id="thUsageLimit">제한</th>
+            <th id="thUsageBar">이용률</th>
+          </tr></thead>
+          <tbody id="usageBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENTS PANEL -->
+  <div class="admin-panel" id="panelStudents">
+    <div class="card">
+      <div class="card-title">➕ <span id="addStudentTitle">수강생 추가</span></div>
+      <div class="inline-form">
+        <div class="form-group"><label id="lblStuNameKo">이름(한국어)</label><input type="text" class="form-control" id="stuNameKo" style="width:130px" placeholder="홍길동"></div>
+        <div class="form-group"><label id="lblStuNameJa">이름(日本語)</label><input type="text" class="form-control" id="stuNameJa" style="width:130px" placeholder="ホン・ギルドン"></div>
+        <div class="form-group"><label id="lblStuCourse">코스</label><input type="text" class="form-control" id="stuCourse" style="width:160px" placeholder="팝보컬 기초"></div>
+        <div class="form-group"><label id="lblStuInstructor">담당 강사</label>
+          <select class="form-control" id="stuInstructor" style="width:130px"><option value="">--</option></select>
+        </div>
+        <div class="form-group"><label id="lblStuMemo">비고</label><input type="text" class="form-control" id="stuMemo" style="width:180px" placeholder="특이사항"></div>
+        <div class="form-group" style="align-self:flex-end"><button class="btn btn-primary" onclick="addStudent()" id="btnAddStudent">추가</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">👥 <span id="studentListTitle">수강생 목록</span></div>
+      <div class="table-wrap">
+        <table class="data-table" id="studentTable">
+          <thead><tr>
+            <th class="sortable" id="thStuNameKo" onclick="sortStudents('nameKo')">이름(한국어)</th>
+            <th class="sortable" id="thStuNameJa" onclick="sortStudents('nameJa')">이름(日本語)</th>
+            <th class="sortable" id="thStuCourse" onclick="sortStudents('course')">코스</th>
+            <th id="thStuInstructor">담당 강사</th>
+            <th id="thStuMemo">비고</th>
+            <th id="thStuAction"></th>
+          </tr></thead>
+          <tbody id="studentBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="studentPagination"></div>
+    </div>
+  </div>
+
+  <!-- INSTRUCTORS PANEL -->
+  <div class="admin-panel" id="panelInstructors">
+    <div class="card">
+      <div class="card-title">➕ <span id="addInstructorTitle">강사 추가</span></div>
+      <div class="inline-form">
+        <div class="form-group"><label id="lblInstNameKo">이름(한국어)</label><input type="text" class="form-control" id="instNameKo" style="width:130px" placeholder="김선생"></div>
+        <div class="form-group"><label id="lblInstNameJa">이름(日本語)</label><input type="text" class="form-control" id="instNameJa" style="width:130px" placeholder="キム先生"></div>
+        <div class="form-group">
+          <label id="lblInstColor">색상</label>
+          <div class="color-input-wrap"><input type="color" id="instColor" value="#7c6af7"></div>
+        </div>
+        <div class="form-group" style="align-self:flex-end"><button class="btn btn-primary" onclick="addInstructor()" id="btnAddInstructor">추가</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">👨‍🏫 <span id="instructorListTitle">강사 목록</span></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th id="thInstNameKo">이름(한국어)</th>
+            <th id="thInstNameJa">이름(日本語)</th>
+            <th id="thInstColor">색상</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="instructorBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="admin-panel" id="panelSettings">
+    <div class="card">
+      <div class="card-title">⚙️ <span id="settingsTitle">시스템 설정</span></div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label" id="setMaxPerSlot">1회 최대 이용시간</div>
+          <div class="setting-desc" id="setMaxPerSlotDesc">한 번에 예약 가능한 최대 시간</div>
+        </div>
+        <div class="number-input-wrap">
+          <input type="number" class="form-control" id="maxSessionHours" value="2" min="0.5" max="12" step="0.5" style="width:80px" onchange="saveSettings()">
+          <span id="hourUnit">시간</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label" id="setMaxPerDay">1인 일일 최대 이용시간</div>
+          <div class="setting-desc" id="setMaxPerDayDesc">하루 동안 1인이 사용할 수 있는 최대 시간</div>
+        </div>
+        <div class="number-input-wrap">
+          <input type="number" class="form-control" id="maxDailyHours" value="4" min="0.5" max="24" step="0.5" style="width:80px" onchange="saveSettings()">
+          <span id="hourUnit2">시간</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label" id="setOpenTime">운영 시작 시간</div></div>
+        <select class="form-control" id="openTime" style="width:110px" onchange="saveSettings()"></select>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label" id="setCloseTime">운영 종료 시간</div></div>
+        <select class="form-control" id="closeTime" style="width:110px" onchange="saveSettings()"></select>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label" id="setAdminPw">관리자 비밀번호 변경</div></div>
+        <div style="display:flex;gap:8px">
+          <input type="password" class="form-control" id="newPwInput" placeholder="새 비밀번호" style="width:150px">
+          <button class="btn btn-ghost btn-sm" onclick="changePassword()" id="btnChangePw">변경</button>
+        </div>
+      </div>
+    </div>
+    <!-- COURSE LIMITS -->
+    <div class="card">
+      <div class="card-title">🎓 <span id="courseLimitTitle">수강 클래스별 일일 연습시간 제한</span></div>
+      <div class="setting-desc" style="margin-bottom:12px" id="courseLimitDesc">코스명을 입력하고 하루 최대 연습시간을 설정하세요. 수강생 등록 시 코스명이 일치하면 자동 적용됩니다.</div>
+      <div class="inline-form" style="margin-bottom:12px">
+        <div class="form-group"><label id="lblCLName">코스명</label><input type="text" class="form-control" id="clNameInput" style="width:160px" placeholder="팝보컬 기초"></div>
+        <div class="form-group">
+          <label id="lblCLHours">일 제한 시간</label>
+          <div class="number-input-wrap">
+            <input type="number" class="form-control" id="clHoursInput" value="2" min="0.5" max="24" step="0.5" style="width:80px">
+            <span id="clHourUnit">시간</span>
+          </div>
+        </div>
+        <div class="form-group" style="align-self:flex-end"><button class="btn btn-primary" onclick="addCourseLimit()" id="btnAddCL">추가</button></div>
+      </div>
+      <div class="course-limits-wrap" id="courseLimitsWrap"></div>
+    </div>
+    <!-- NOTICE ADMIN -->
+    <div class="card">
+      <div class="card-title">📋 <span id="noticeAdminTitle">예약표 주의사항 관리</span></div>
+      <div class="inline-form" style="margin-bottom:14px">
+        <div class="form-group" style="flex:1;min-width:220px">
+          <label id="lblNoticeKo">내용(한국어)</label>
+          <input type="text" class="form-control" id="noticeInputKo" placeholder="예) 1인당 1회 예약 가능한 시간은 2시간입니다.">
+        </div>
+        <div class="form-group" style="flex:1;min-width:220px">
+          <label id="lblNoticeJa">内容(日本語)</label>
+          <input type="text" class="form-control" id="noticeInputJa" placeholder="例）1人1回の予約可能時間は2時間です。">
+        </div>
+        <div class="form-group" style="align-self:flex-end">
+          <button class="btn btn-primary" onclick="addNotice()" id="btnAddNotice">추가</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th id="thNoticeKo">내용(한국어)</th>
+            <th id="thNoticeJa">内容(日本語)</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="noticeBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <h3 id="modalTitle">예약하기</h3>
+    <div class="slot-info"><div id="modalRoomTime"></div></div>
+    <div class="form-group">
+      <label id="lblModalStudent">수강생 선택</label>
+      <select class="form-control" id="modalStudent"></select>
+    </div>
+    <div class="form-group">
+      <label id="lblModalDuration">이용 시간 선택</label>
+      <div class="time-slot-grid" id="timeSlotGrid"></div>
+      <div class="slot-selected-summary" id="slotSelectedSummary"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()" id="btnCancel">취소</button>
+      <button class="btn btn-primary" onclick="confirmBooking()" id="btnConfirm">예약</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW BOOKING MODAL -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal">
+    <h3 id="viewModalTitle">예약 정보</h3>
+    <div class="slot-info" id="viewModalInfo" style="line-height:1.8"></div>
+    <!-- lesson: no-cancel note -->
+    <div id="lessonNoCancelNote" style="display:none;font-size:12px;color:var(--text2);margin-top:8px;padding:8px 12px;background:var(--surface2);border-radius:7px;"></div>
+    <!-- student: partial cancel section (hidden until cancel clicked) -->
+    <div id="cancelSection" style="display:none;margin-top:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;" id="cancelPartialLabel">취소할 시간 선택</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;" id="cancelConfirmMsg">예약을 취소하겠습니까?</div>
+      <div class="time-slot-grid" id="cancelSlotGrid"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+        <button class="btn btn-ghost btn-sm" onclick="hideCancelSection()" id="btnBack">돌아가기</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmCancelBooking()" id="btnConfirmCancel">취소 확정</button>
+      </div>
+    </div>
+    <div class="modal-actions" id="viewModalActions">
+      <button class="btn btn-ghost" onclick="closeViewModal()" id="btnViewClose">닫기</button>
+      <button class="btn btn-danger" onclick="showCancelSection()" id="btnCancelBooking">예약 취소</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let lang = 'ko';
+let currentDate = new Date();
+let adminLoggedIn = false;
+let viewingBooking = null;
+let studentSort = {col: 'nameKo', dir: 'asc'};
+let studentPage = 1;
+const STUDENTS_PER_PAGE = 20;
+
+const STORAGE_KEYS = {
+  bookings: 'vb_bookings', students: 'vb_students',
+  instructors: 'vb_instructors', settings: 'vb_settings',
+  notices: 'vb_notices', courseLimits: 'vb_course_limits'
+};
+
+let state = {
+  bookings: {},
+  students: [],
+  instructors: [],
+  settings: { maxSessionHours: 2, maxDailyHours: 4, openTime: '09:00', closeTime: '22:00', password: '1234' },
+  notices: [{ id: 1, textKo: '1인당 1회 예약 가능한 시간은 2시간입니다.', textJa: '1人1回の予約可能時間は2時間です。' }],
+  courseLimits: [] // [{id, name, monthlyHours}]
+};
+
+// ===== STORAGE =====
+async function storageGet(key) {
+  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; } catch { return null; }
+}
+async function storageSet(key, value) {
+  try { await window.storage.set(key, JSON.stringify(value)); } catch {}
+}
+async function loadState() {
+  const [b,s,i,st,n,cl] = await Promise.all([
+    storageGet(STORAGE_KEYS.bookings), storageGet(STORAGE_KEYS.students),
+    storageGet(STORAGE_KEYS.instructors), storageGet(STORAGE_KEYS.settings),
+    storageGet(STORAGE_KEYS.notices), storageGet(STORAGE_KEYS.courseLimits)
+  ]);
+  if (b) state.bookings = b;
+  if (s) state.students = s;
+  if (i) state.instructors = i;
+  if (st) state.settings = {...state.settings, ...st};
+  if (n) state.notices = n;
+  if (cl) state.courseLimits = cl;
+  renderAll();
+}
+const saveBookings = () => storageSet(STORAGE_KEYS.bookings, state.bookings);
+const saveStudents = () => storageSet(STORAGE_KEYS.students, state.students);
+const saveInstructors = () => storageSet(STORAGE_KEYS.instructors, state.instructors);
+const saveNotices = () => storageSet(STORAGE_KEYS.notices, state.notices);
+const saveCourseLimits = () => storageSet(STORAGE_KEYS.courseLimits, state.courseLimits);
+
+async function saveSettings() {
+  state.settings.maxSessionHours = parseFloat(document.getElementById('maxSessionHours').value) || 2;
+  state.settings.maxDailyHours = parseFloat(document.getElementById('maxDailyHours').value) || 4;
+  state.settings.openTime = document.getElementById('openTime').value;
+  state.settings.closeTime = document.getElementById('closeTime').value;
+  await storageSet(STORAGE_KEYS.settings, state.settings);
+  renderSchedule(); populateTimeSelects(); renderLessonCheckboxes();
+  showToast(t('settingsSaved'), 'success');
+}
+
+// ===== I18N =====
+const i18n = {
+  ko: {
+    navTitle:'보컬 연습실 예약', booking:'예약표', admin:'관리자',
+    adminLoginTitle:'관리자 로그인', adminLoginDesc:'비밀번호를 입력하세요',
+    adminLoginBtn:'로그인', loginError:'비밀번호가 올바르지 않습니다.',
+    logout:'로그아웃', today:'오늘',
+    tabBookings:'예약 관리', tabStudents:'수강생 관리', tabInstructors:'강사 관리', tabSettings:'설정',
+    adminBookingTitle:'강사 레슨 예약', allBookingsTitle:'수강생별 연습시간 현황',
+    addStudentTitle:'수강생 추가', studentListTitle:'수강생 목록',
+    addInstructorTitle:'강사 추가', instructorListTitle:'강사 목록', settingsTitle:'시스템 설정',
+    lblLessonDate:'날짜', lblLessonRoom:'연습실', lblLessonInstructor:'강사',
+    lblLessonSlots:'시간 선택 (30분 단위)', btnAddLesson:'예약 등록',
+    lblUsageMonth:'기간', btnThisMonth:'이번 달',
+    thUsageName:'이름', thUsageCourse:'코스', thUsageInst:'담당 강사',
+    thUsageTotal:'총 연습시간', thUsageLimit:'제한', thUsageBar:'이용률',
+    lblStuNameKo:'이름(한국어)', lblStuNameJa:'이름(日本語)', lblStuCourse:'코스',
+    lblStuInstructor:'담당 강사', lblStuMemo:'비고', btnAddStudent:'추가',
+    thStuNameKo:'이름(한국어)', thStuNameJa:'이름(日本語)', thStuCourse:'코스',
+    thStuInstructor:'담당 강사', thStuMemo:'비고',
+    lblInstNameKo:'이름(한국어)', lblInstNameJa:'이름(日本語)', lblInstColor:'색상', btnAddInstructor:'추가',
+    thInstNameKo:'이름(한국어)', thInstNameJa:'이름(日本語)', thInstColor:'색상',
+    setMaxPerSlot:'1회 최대 이용시간', setMaxPerSlotDesc:'한 번에 예약 가능한 최대 시간',
+    setMaxPerDay:'1인 일일 최대 이용시간', setMaxPerDayDesc:'하루 동안 1인이 사용할 수 있는 최대 시간',
+    setOpenTime:'운영 시작 시간', setCloseTime:'운영 종료 시간',
+    setAdminPw:'관리자 비밀번호 변경', btnChangePw:'변경', hourUnit:'시간',
+    courseLimitTitle:'수강 클래스별 일일 연습시간 제한',
+    courseLimitDesc:'코스명 입력 후 하루 최대 연습시간을 설정하세요.',
+    lblCLName:'코스명', lblCLHours:'일 제한 시간', clHourUnit:'시간', btnAddCL:'추가',
+    noticeTitle:'이용 안내', noticeCollapse:'접기 ▲', noticeExpand:'펼치기 ▼',
+    noticeAdminTitle:'예약표 주의사항 관리', lblNoticeKo:'내용(한국어)', lblNoticeJa:'内容(日本語)',
+    thNoticeKo:'내용(한국어)', thNoticeJa:'内容(日本語)', btnAddNotice:'추가',
+    noNotices:'주의사항이 없습니다.',
+    modalTitle:'예약하기', lblModalStudent:'수강생 선택', lblModalDuration:'이용 시간',
+    btnCancel:'취소', btnConfirm:'예약', btnViewClose:'닫기', btnCancelBooking:'예약 취소',
+    viewModalTitle:'예약 정보',
+    room:'연습실', lesson:'레슨', student:'수강생', typeLesson:'레슨', typeStudent:'수강생',
+    blockTitle:'이용 불가 시간 설정', lblBlockDate:'날짜', lblBlockRoom:'연습실',
+    lblBlockSlots:'시간 선택 (30분 단위)', btnAddBlock:'등록', blockAdded:'이용 불가 시간이 설정되었습니다.',
+    typeBlocked:'이용 불가', lessonNoCancelNote:'강사 레슨은 예약표에서 취소할 수 없습니다. 관리자 페이지에서 취소해주세요.',
+    cancelConfirmTitle:'예약 취소', cancelConfirmMsg:'예약을 취소하겠습니까?',
+    cancelPartialLabel:'취소할 시간 선택', btnConfirmCancel:'취소 확정', btnBack:'돌아가기',
+    bookingSuccess:'예약이 완료되었습니다.', bookingCancelled:'예약이 취소되었습니다.',
+    lessonAdded:'레슨이 등록되었습니다.', settingsSaved:'설정이 저장되었습니다.',
+    studentAdded:'수강생이 추가되었습니다.', instructorAdded:'강사가 추가되었습니다.',
+    pwChanged:'비밀번호가 변경되었습니다.', deleted:'삭제되었습니다.',
+    errNoStudent:'수강생을 선택하세요.', errMaxSession:'1회 최대 이용시간을 초과합니다.',
+    errMaxDaily:'일일 최대 이용시간을 초과합니다.', errConflict:'이미 예약된 시간입니다.',
+    errNoInstructor:'강사를 선택하세요.', errTimeMissing:'시간을 올바르게 선택하세요.',
+    errNameMissing:'이름을 입력하세요.', errPwMissing:'비밀번호를 입력하세요.',
+    errNoSlots:'시간을 선택하세요.',
+    noBookings:'예약이 없습니다.', noStudents:'수강생이 없습니다.', noInstructors:'강사가 없습니다.',
+    confirm:'정말 삭제하시겠습니까?',
+    unlimited:'제한 없음', hours:'시간',
+    duration: (h) => h < 1 ? `${h*60}분` : h === Math.floor(h) ? `${h}시간` : `${Math.floor(h)}시간 30분`,
+    dateFormat: (d) => `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${['일','월','화','수','목','금','토'][d.getDay()]})`,
+  },
+  ja: {
+    navTitle:'ボーカル練習室予約', booking:'予約表', admin:'管理者',
+    adminLoginTitle:'管理者ログイン', adminLoginDesc:'パスワードを入力してください',
+    adminLoginBtn:'ログイン', loginError:'パスワードが正しくありません。',
+    logout:'ログアウト', today:'今日',
+    tabBookings:'予約管理', tabStudents:'受講生管理', tabInstructors:'インストラクター管理', tabSettings:'設定',
+    adminBookingTitle:'インストラクターレッスン予約', allBookingsTitle:'受講生別練習時間状況',
+    addStudentTitle:'受講生追加', studentListTitle:'受講生一覧',
+    addInstructorTitle:'インストラクター追加', instructorListTitle:'インストラクター一覧', settingsTitle:'システム設定',
+    lblLessonDate:'日付', lblLessonRoom:'練習室', lblLessonInstructor:'講師',
+    lblLessonSlots:'時間選択（30分単位）', btnAddLesson:'予約登録',
+    lblUsageMonth:'期間', btnThisMonth:'今月',
+    thUsageName:'氏名', thUsageCourse:'コース', thUsageInst:'担当講師',
+    thUsageTotal:'総練習時間', thUsageLimit:'制限', thUsageBar:'利用率',
+    lblStuNameKo:'氏名(韓国語)', lblStuNameJa:'氏名(日本語)', lblStuCourse:'コース',
+    lblStuInstructor:'担当講師', lblStuMemo:'備考', btnAddStudent:'追加',
+    thStuNameKo:'氏名(韓国語)', thStuNameJa:'氏名(日本語)', thStuCourse:'コース',
+    thStuInstructor:'担当講師', thStuMemo:'備考',
+    lblInstNameKo:'氏名(韓国語)', lblInstNameJa:'氏名(日本語)', lblInstColor:'カラー', btnAddInstructor:'追加',
+    thInstNameKo:'氏名(韓国語)', thInstNameJa:'氏名(日本語)', thInstColor:'カラー',
+    setMaxPerSlot:'1回最大利用時間', setMaxPerSlotDesc:'一度に予約できる最大時間',
+    setMaxPerDay:'1人1日最大利用時間', setMaxPerDayDesc:'1日に1人が利用できる最大時間',
+    setOpenTime:'営業開始時間', setCloseTime:'営業終了時間',
+    setAdminPw:'管理者パスワード変更', btnChangePw:'変更', hourUnit:'時間',
+    courseLimitTitle:'コース別1日練習時間制限',
+    courseLimitDesc:'コース名を入力して1日の最大練習時間を設定してください。',
+    lblCLName:'コース名', lblCLHours:'1日制限時間', clHourUnit:'時間', btnAddCL:'追加',
+    noticeTitle:'ご利用案内', noticeCollapse:'閉じる ▲', noticeExpand:'開く ▼',
+    noticeAdminTitle:'予約表注意事項管理', lblNoticeKo:'内容(韓国語)', lblNoticeJa:'内容(日本語)',
+    thNoticeKo:'内容(韓国語)', thNoticeJa:'内容(日本語)', btnAddNotice:'追加',
+    noNotices:'注意事項はありません。',
+    modalTitle:'予約する', lblModalStudent:'受講生選択', lblModalDuration:'利用時間',
+    btnCancel:'キャンセル', btnConfirm:'予約', btnViewClose:'閉じる', btnCancelBooking:'予約キャンセル',
+    viewModalTitle:'予約情報',
+    room:'練習室', lesson:'レッスン', student:'受講生', typeLesson:'レッスン', typeStudent:'受講生',
+    blockTitle:'利用不可時間設定', lblBlockDate:'日付', lblBlockRoom:'練習室',
+    lblBlockSlots:'時間選択（30分単位）', btnAddBlock:'登録', blockAdded:'利用不可時間が設定されました。',
+    typeBlocked:'利用不可', lessonNoCancelNote:'インストラクターのレッスンは予約表からキャンセルできません。管理者ページからキャンセルしてください。',
+    cancelConfirmTitle:'予約キャンセル', cancelConfirmMsg:'予約をキャンセルしますか？',
+    cancelPartialLabel:'キャンセルする時間を選択', btnConfirmCancel:'キャンセル確定', btnBack:'戻る',
+    bookingSuccess:'予約が完了しました。', bookingCancelled:'予約がキャンセルされました。',
+    lessonAdded:'レッスンが登録されました。', settingsSaved:'設定が保存されました。',
+    studentAdded:'受講生が追加されました。', instructorAdded:'インストラクターが追加されました。',
+    pwChanged:'パスワードが変更されました。', deleted:'削除されました。',
+    errNoStudent:'受講生を選択してください。', errMaxSession:'1回最大利用時間を超えています。',
+    errMaxDaily:'1日最大利用時間を超えています。', errConflict:'既に予約済みの時間です。',
+    errNoInstructor:'講師を選択してください。', errTimeMissing:'時間を正しく選択してください。',
+    errNameMissing:'名前を入力してください。', errPwMissing:'パスワードを入力してください。',
+    errNoSlots:'時間を選択してください。',
+    noBookings:'予約はありません。', noStudents:'受講生はいません。', noInstructors:'インストラクターはいません。',
+    confirm:'本当に削除しますか？',
+    unlimited:'制限なし', hours:'時間',
+    duration: (h) => h < 1 ? `${h*60}分` : h === Math.floor(h) ? `${h}時間` : `${Math.floor(h)}時間30分`,
+    dateFormat: (d) => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${['日','月','火','水','木','金','土'][d.getDay()]}）`,
+  }
+};
+
+function t(key) { return (i18n[lang] || i18n.ko)[key] || key; }
+function getName(obj) { if (!obj) return ''; return lang === 'ja' ? (obj.nameJa || obj.nameKo || '') : (obj.nameKo || obj.nameJa || ''); }
+
+// ===== LANGUAGE =====
+function setLang(l) {
+  lang = l;
+  document.getElementById('btnKo').className = 'lang-btn' + (l==='ko'?' active':'');
+  document.getElementById('btnJa').className = 'lang-btn' + (l==='ja'?' active':'');
+  applyI18n(); renderAll();
+  renderNoticeAdmin(); renderCourseLimits(); renderUsageTable();
+}
+
+function applyI18n() {
+  const ids = [
+    'navTitle','adminLoginTitle','adminLoginDesc','adminLoginBtn',
+    'btnToday','tabBookings','tabStudents','tabInstructors','tabSettings','btnLogout',
+    'adminBookingTitle','allBookingsTitle','addStudentTitle','studentListTitle',
+    'addInstructorTitle','instructorListTitle','settingsTitle',
+    'lblLessonDate','lblLessonRoom','lblLessonInstructor','btnAddLesson','lblLessonSlots',
+    'lblUsageMonth','btnThisMonth',
+    'thUsageName','thUsageCourse','thUsageInst','thUsageTotal','thUsageLimit','thUsageBar',
+    'lblStuNameKo','lblStuNameJa','lblStuCourse','lblStuInstructor','lblStuMemo','btnAddStudent',
+    'thStuNameKo','thStuNameJa','thStuCourse','thStuInstructor','thStuMemo',
+    'lblInstNameKo','lblInstNameJa','lblInstColor','btnAddInstructor',
+    'thInstNameKo','thInstNameJa','thInstColor',
+    'setMaxPerSlot','setMaxPerSlotDesc','setMaxPerDay','setMaxPerDayDesc',
+    'setOpenTime','setCloseTime','setAdminPw','btnChangePw','hourUnit','hourUnit2',
+    'courseLimitTitle','courseLimitDesc','lblCLName','lblCLHours','clHourUnit','btnAddCL',
+    'noticeTitle','noticeAdminTitle','lblNoticeKo','lblNoticeJa','thNoticeKo','thNoticeJa','btnAddNotice',
+    'modalTitle','lblModalStudent','lblModalDuration','btnCancel','btnConfirm',
+    'btnViewClose','btnCancelBooking','viewModalTitle'
+  ];
+  ids.forEach(id => { const el = document.getElementById(id); if (el && t(id) !== id) el.textContent = t(id); });
+  document.title = t('navTitle');
+  document.getElementById('navBooking').textContent = t('booking');
+  document.getElementById('navAdmin').textContent = t('admin');
+  const hu2 = document.getElementById('hourUnit2');
+  if (hu2) hu2.textContent = t('hourUnit');
+  const cl = document.getElementById('clHourUnit');
+  if (cl) cl.textContent = t('hourUnit');
+  document.getElementById('lessonRoom').querySelectorAll('option').forEach((o,i) => { o.textContent = `${t('room')} ${i+1}`; });
+}
+
+// ===== TIME UTILS =====
+function getTimeSlots() {
+  const open = state.settings.openTime || '09:00';
+  const close = state.settings.closeTime || '22:00';
+  const [oh,om] = open.split(':').map(Number);
+  const [ch,cm] = close.split(':').map(Number);
+  const slots = [];
+  let h = oh, m = om;
+  while (h < ch || (h === ch && m < cm)) {
+    slots.push(`${String(h).padStart(2,'0')}:${m===0?'00':'30'}`);
+    m += 30; if (m >= 60) { h++; m = 0; }
+  }
+  slots.push(`${String(ch).padStart(2,'0')}:${cm===0?'00':'30'}`);
+  return slots;
+}
+
+function populateTimeSelects() {
+  ['openTime','closeTime'].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    const prev = sel.value || state.settings[id];
+    sel.innerHTML = '';
+    for (let h = 0; h < 24; h++) for (let m = 0; m < 60; m += 30) {
+      const v = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o);
+    }
+    sel.value = prev;
+  });
+  document.getElementById('openTime').value = state.settings.openTime;
+  document.getElementById('closeTime').value = state.settings.closeTime;
+}
+
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ===== SCHEDULE RENDER =====
+function renderSchedule() {
+  const dk = dateKey(currentDate);
+  const slots = getTimeSlots();
+  document.getElementById('dateLabel').textContent = t('dateFormat')(currentDate);
+  const table = document.getElementById('scheduleTable');
+  let html = '<thead><tr><th></th>';
+  for (let r = 1; r <= 5; r++) html += `<th><span class="room-num">${r}</span><span class="room-label">${t('room')}</span></th>`;
+  html += '</tr></thead><tbody>';
+  const bookings = state.bookings[dk] || [];
+  for (let si = 0; si < slots.length - 1; si++) {
+    html += `<tr><td class="time-col">${slots[si]}</td>`;
+    for (let r = 1; r <= 5; r++) {
+      const b = bookings.find(bk => bk.room === r && bk.startSlot <= si && bk.endSlot > si);
+      if (b && b.startSlot < si) {
+        // This cell is covered by a rowspan from an earlier row — do NOT emit a <td>
+        continue;
+      }
+      if (b && b.startSlot === si) {
+          const span = b.endSlot - b.startSlot;
+          const totalH = span * 36;
+          let color = '#7c6af7', cellHtml = '';
+          if (b.type === 'blocked') {
+            const totalH = span * 36;
+            cellHtml = `<div class="slot booked" style="background:repeating-linear-gradient(135deg,#e8e6f0,#e8e6f0 4px,#d4d0e8 4px,#d4d0e8 8px);height:${totalH}px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative"
+              data-bk="${encodeURIComponent(JSON.stringify({dk,r,si}))}" onclick="viewBookingSlot(event)">
+              <span style="font-size:10px;font-weight:700;color:#6b6490;letter-spacing:.3px">🚫</span>
+            </div>`;
+          } else if (b.type === 'lesson') {
+            const inst = state.instructors.find(i => i.id === b.instructorId);
+            color = inst ? inst.color : '#7c6af7';
+            const tc = getContrastColor(color);
+            const nameKo = inst ? (inst.nameKo || '') : t('lesson');
+            const nameJa = inst ? (inst.nameJa || '') : '';
+            const hasBoth = nameKo && nameJa;
+            const timeRange = `${slots[b.startSlot]} – ${slots[b.endSlot]}`;
+            let inner;
+            if (span === 1) {
+              const label = hasBoth ? `${nameKo} / ${nameJa}` : (nameKo || nameJa);
+              inner = `<div class="lesson-slot-inner" style="flex-direction:row;align-items:center;gap:5px;padding:0 8px 0 12px">
+                         <span style="font-size:10px;opacity:.7">🎤</span>
+                         <span class="lesson-slot-name" style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>
+                       </div>`;
+            } else {
+              inner = `<div class="lesson-slot-inner">
+                         <span class="lesson-slot-tag">🎤 LESSON</span>
+                         ${nameKo ? `<span class="lesson-slot-name">${nameKo}</span>` : ''}
+                         ${nameJa ? `<span class="lesson-slot-time" style="opacity:.85;font-size:10px">${nameJa}</span>` : ''}
+                         <span class="lesson-slot-time">${timeRange}</span>
+                       </div>`;
+            }
+            cellHtml = `<div class="slot booked lesson-slot" style="background:${color};color:${tc};height:${totalH}px;position:relative"
+              data-bk="${encodeURIComponent(JSON.stringify({dk,r,si}))}" onclick="viewBookingSlot(event)">${inner}</div>`;
+          } else { // student
+            const stu = state.students.find(s => s.id === b.studentId);
+            // Fixed green palette — never inherits instructor color
+            const greenPalette = ['#4ade80','#34d399','#6ee7b7','#86efac','#a7f3d0'];
+            const paletteIdx = stu ? (stu.id % greenPalette.length) : 0;
+            color = greenPalette[paletteIdx];
+            const tc = getContrastColor(color);
+            const nameKo = stu ? (stu.nameKo || '') : '';
+            const nameJa = stu ? (stu.nameJa || '') : '';
+            const hasBoth = nameKo && nameJa;
+            const courseTxt = stu && stu.course ? stu.course : '';
+            let inner;
+            if (span === 1) {
+              const label = hasBoth ? `${nameKo} / ${nameJa}` : (nameKo || nameJa);
+              inner = `<div class="student-slot-inner" style="flex-direction:row;align-items:center;padding:0 8px 0 11px;gap:4px">
+                         <span class="student-slot-name" style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>
+                       </div>`;
+            } else {
+              inner = `<div class="student-slot-inner">
+                         ${nameKo ? `<span class="student-slot-name">${nameKo}</span>` : ''}
+                         ${nameJa ? `<span class="student-slot-course" style="opacity:.85;font-size:10px">${nameJa}</span>` : ''}
+                         ${courseTxt ? `<span class="student-slot-course">${courseTxt}</span>` : ''}
+                       </div>`;
+            }
+            cellHtml = `<div class="slot booked student-slot" style="background:${color};color:${tc};height:${totalH}px;position:relative"
+              data-bk="${encodeURIComponent(JSON.stringify({dk,r,si}))}" onclick="viewBookingSlot(event)">${inner}</div>`;
+          }
+          html += `<td rowspan="${span}" style="padding:0">${cellHtml}</td>`;
+        } else {
+          // Check if this slot is blocked (to prevent booking click)
+          const isBlocked = bookings.some(bk => bk.room === r && bk.startSlot <= si && bk.endSlot > si && bk.type === 'blocked');
+          html += isBlocked
+            ? `<td style="padding:0"><div class="slot" style="background:repeating-linear-gradient(135deg,#e8e6f0,#e8e6f0 4px,#d4d0e8 4px,#d4d0e8 8px);cursor:not-allowed;height:36px"></div></td>`
+            : `<td style="padding:0"><div class="slot empty" onclick="openBookingModal(${r},${si},'${dk}')"></div></td>`;
+        }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function getContrastColor(hex) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return (0.299*r+0.587*g+0.114*b)/255 > 0.62 ? '#1a1730' : '#fff';
+}
+
+// ===== DATE NAV =====
+function changeDate(d) { currentDate = new Date(currentDate); currentDate.setDate(currentDate.getDate()+d); renderSchedule(); }
+function goToday() { currentDate = new Date(); renderSchedule(); }
+
+// ===== BOOKING MODAL =====
+let pendingSlot = null;
+let selectedDurSlots = 0; // number of 30-min slots selected
+
+function openBookingModal(room, slotIdx, dk) {
+  pendingSlot = {room, slotIdx, dk};
+  selectedDurSlots = 0;
+  const slots = getTimeSlots();
+  const maxSlots = Math.floor(state.settings.maxSessionHours * 2);
+  const bookings = state.bookings[dk] || [];
+
+  // Build time slot buttons — duration only (30분, 1시간 …)
+  const grid = document.getElementById('timeSlotGrid');
+  grid.innerHTML = '';
+  let availableCount = 0;
+  for (let i = 1; i <= maxSlots; i++) {
+    const endIdx = slotIdx + i;
+    if (endIdx >= slots.length) break;
+    const blocked = bookings.some(bk => bk.room === room && bk.startSlot < endIdx && bk.endSlot > slotIdx);
+    if (blocked) break;
+    availableCount++;
+    const btn = document.createElement('button');
+    btn.className = 'time-slot-btn';
+    btn.dataset.slots = i;
+    btn.innerHTML = `<span class="tsb-time">${t('duration')(i * 0.5)}</span>`;
+    btn.onclick = () => selectTimeSlot(i);
+    grid.appendChild(btn);
+  }
+
+  if (!availableCount) { showToast(t('errConflict'), 'error'); return; }
+
+  document.getElementById('slotSelectedSummary').textContent = '';
+  document.getElementById('modalRoomTime').innerHTML =
+    `<span style="color:var(--accent2)">${t('room')} ${room}</span> &nbsp; ${slots[slotIdx]} ~`;
+
+  // Populate students
+  const stuSel = document.getElementById('modalStudent');
+  stuSel.innerHTML = `<option value="">-- ${t('student')} --</option>`;
+  getSortedStudents().forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = getName(s) + (s.course ? ` (${s.course})` : ''); stuSel.appendChild(o);
+  });
+  document.getElementById('bookingModal').classList.add('open');
+}
+
+function selectTimeSlot(numSlots) {
+  selectedDurSlots = numSlots;
+  // Update button states
+  document.querySelectorAll('.time-slot-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.slots) === numSlots);
+  });
+  // Update summary
+  const slots = getTimeSlots();
+  const {slotIdx} = pendingSlot;
+  const summary = document.getElementById('slotSelectedSummary');
+  const endTime = slots[slotIdx + numSlots];
+  const durText = t('duration')(numSlots * 0.5);
+  summary.textContent = `${slots[slotIdx]} ~ ${endTime}  (${durText})`;
+}
+
+function closeModal() {
+  document.getElementById('bookingModal').classList.remove('open');
+  pendingSlot = null; selectedDurSlots = 0;
+}
+
+function confirmBooking() {
+  if (!pendingSlot) return;
+  const {room, slotIdx, dk} = pendingSlot;
+  const stuId = parseInt(document.getElementById('modalStudent').value);
+  if (!stuId) { showToast(t('errNoStudent'), 'error'); return; }
+  if (!selectedDurSlots) { showToast(t('errNoSlots'), 'error'); return; }
+  const endSlot = slotIdx + selectedDurSlots;
+  const dailyUsed = getDailyUsage(dk, stuId);
+  if (dailyUsed + selectedDurSlots * 0.5 > state.settings.maxDailyHours) { showToast(t('errMaxDaily'), 'error'); return; }
+  if (!state.bookings[dk]) state.bookings[dk] = [];
+  state.bookings[dk].push({room, startSlot:slotIdx, endSlot, studentId:stuId, type:'student', id:Date.now()});
+  saveBookings(); closeModal(); renderSchedule();
+  if (adminLoggedIn) renderUsageTable();
+  showToast(t('bookingSuccess'), 'success');
+}
+
+function getDailyUsage(dk, studentId) {
+  return (state.bookings[dk]||[]).filter(b=>b.studentId===studentId&&b.type==='student').reduce((a,b)=>a+(b.endSlot-b.startSlot)*0.5,0);
+}
+
+// ===== VIEW BOOKING =====
+function viewBookingSlot(e) {
+  e.stopPropagation();
+  const raw = JSON.parse(decodeURIComponent(e.currentTarget.dataset.bk));
+  const {dk, r, si} = raw;
+  const b = (state.bookings[dk]||[]).find(bk=>bk.room===r&&bk.startSlot<=si&&bk.endSlot>si);
+  if (!b) return;
+  viewingBooking = {dk, booking:b};
+  const slots = getTimeSlots();
+  let html = `<div><span style="color:var(--text2)">${t('room')}: </span>${t('room')} ${r}</div>`;
+  html += `<div><span style="color:var(--text2)">${lang==='ja'?'時間':'시간'}: </span>${slots[b.startSlot]} ~ ${slots[b.endSlot]}</div>`;
+  if (b.type==='lesson') {
+    const inst = state.instructors.find(i=>i.id===b.instructorId);
+    html += `<div><span style="color:var(--text2)">${t('tabInstructors')}: </span>${inst?getName(inst):'-'}</div>`;
+  } else if (b.type==='blocked') {
+    html += `<div><span style="color:var(--danger);font-weight:700">${t('typeBlocked')}</span></div>`;
+  } else {
+    const stu = state.students.find(s=>s.id===b.studentId);
+    html += `<div><span style="color:var(--text2)">${t('student')}: </span>${stu?getName(stu):'-'}</div>`;
+    if (stu&&stu.course) html += `<div><span style="color:var(--text2)">${t('lblStuCourse')}: </span>${stu.course}</div>`;
+  }
+  document.getElementById('viewModalInfo').innerHTML = html;
+
+  // lesson: show no-cancel note, hide cancel button
+  const isLesson = b.type==='lesson';
+  const isBlocked = b.type==='blocked';
+  const noteEl = document.getElementById('lessonNoCancelNote');
+  const actionsEl = document.getElementById('viewModalActions');
+  const cancelBtn = document.getElementById('btnCancelBooking');
+  noteEl.style.display = isLesson ? 'block' : 'none';
+  noteEl.textContent = isLesson ? t('lessonNoCancelNote') : '';
+  cancelBtn.style.display = (isLesson) ? 'none' : 'inline-block';
+  // blocked type: show cancel button (admin can remove it)
+  hideCancelSection();
+  document.getElementById('viewModal').classList.add('open');
+}
+
+function closeViewModal() {
+  document.getElementById('viewModal').classList.remove('open');
+  viewingBooking = null;
+  hideCancelSection();
+}
+
+let cancelSelectedSlots = 0; // how many slots to cancel from the start
+
+function showCancelSection() {
+  if (!viewingBooking) return;
+  const b = viewingBooking.booking;
+  const slots = getTimeSlots();
+  const span = b.endSlot - b.startSlot;
+  // Build partial cancel buttons: 30분 ~ full duration
+  const grid = document.getElementById('cancelSlotGrid');
+  grid.innerHTML = '';
+  cancelSelectedSlots = span; // default: cancel all
+  for (let i = 1; i <= span; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'time-slot-btn' + (i === span ? ' selected' : '');
+    btn.dataset.slots = i;
+    btn.textContent = t('duration')(i * 0.5);
+    btn.onclick = () => {
+      cancelSelectedSlots = i;
+      grid.querySelectorAll('.time-slot-btn').forEach(b2 => b2.classList.toggle('selected', parseInt(b2.dataset.slots)===i));
+    };
+    grid.appendChild(btn);
+  }
+  document.getElementById('cancelSection').style.display = 'block';
+  document.getElementById('viewModalActions').style.display = 'none';
+}
+
+function hideCancelSection() {
+  document.getElementById('cancelSection').style.display = 'none';
+  document.getElementById('viewModalActions').style.display = 'flex';
+  cancelSelectedSlots = 0;
+}
+
+function confirmCancelBooking() {
+  if (!viewingBooking || !cancelSelectedSlots) return;
+  const {dk, booking: b} = viewingBooking;
+  const span = b.endSlot - b.startSlot;
+  if (cancelSelectedSlots >= span) {
+    // Cancel entire booking
+    state.bookings[dk] = (state.bookings[dk]||[]).filter(bk=>bk.id!==b.id);
+  } else {
+    // Partial cancel: trim from the end (latest slots removed)
+    b.endSlot = b.startSlot + (span - cancelSelectedSlots);
+  }
+  saveBookings(); closeViewModal(); renderSchedule();
+  if (adminLoggedIn) renderUsageTable();
+  showToast(t('bookingCancelled'), 'success');
+}
+
+// ===== BLOCK TIME =====
+function renderBlockCheckboxes() {
+  const grid = document.getElementById('blockCheckboxGrid');
+  if (!grid) return;
+  const date = document.getElementById('blockDate').value;
+  const room = parseInt(document.getElementById('blockRoom').value);
+  const slots = getTimeSlots();
+  const bookings = date ? (state.bookings[date]||[]) : [];
+  let html = '', lastHour = -1;
+  for (let si = 0; si < slots.length - 1; si++) {
+    const hour = parseInt(slots[si].split(':')[0]);
+    if (hour !== lastHour) { html += `<div class="cb-section-label">${hour}:00</div>`; lastHour = hour; }
+    const conflict = bookings.some(b=>b.room===room&&b.startSlot<=si&&b.endSlot>si);
+    const conflictClass = conflict ? ' conflict' : '';
+    html += `<div class="lesson-cb-row${conflictClass}" id="blkrow_${si}" onclick="toggleBlockCb(${si},${conflict})">
+      <input type="checkbox" id="blockCb_${si}" ${conflict?'disabled':''}>
+      <label for="blockCb_${si}">${slots[si]} ~ ${slots[si+1]}</label>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.lesson-cb-row:not(.conflict)').forEach(row => {
+    const cb = row.querySelector('input');
+    if (cb) cb.addEventListener('change', () => row.classList.toggle('checked', cb.checked));
+  });
+}
+
+function toggleBlockCb(si, conflict) {
+  if (conflict) return;
+  const cb = document.getElementById(`blockCb_${si}`);
+  if (cb && !cb.disabled) {
+    cb.checked = !cb.checked;
+    document.getElementById(`blkrow_${si}`).classList.toggle('checked', cb.checked);
+  }
+}
+
+function addBlockBooking() {
+  const date = document.getElementById('blockDate').value;
+  const room = parseInt(document.getElementById('blockRoom').value);
+  if (!date) { showToast(t('errTimeMissing'), 'error'); return; }
+  const slots = getTimeSlots();
+  const checkedSlots = [];
+  for (let si = 0; si < slots.length - 1; si++) {
+    const cb = document.getElementById(`blockCb_${si}`);
+    if (cb && cb.checked) checkedSlots.push(si);
+  }
+  if (!checkedSlots.length) { showToast(t('errNoSlots'), 'error'); return; }
+  if (!state.bookings[date]) state.bookings[date] = [];
+  // Group consecutive slots
+  let groups = [], cur = [checkedSlots[0]];
+  for (let i = 1; i < checkedSlots.length; i++) {
+    if (checkedSlots[i] === checkedSlots[i-1]+1) cur.push(checkedSlots[i]);
+    else { groups.push(cur); cur = [checkedSlots[i]]; }
+  }
+  groups.push(cur);
+  let added = 0;
+  for (const g of groups) {
+    const startSlot=g[0], endSlot=g[g.length-1]+1;
+    const conflict = state.bookings[date].some(b=>b.room===room&&b.startSlot<endSlot&&b.endSlot>startSlot);
+    if (!conflict) { state.bookings[date].push({room,startSlot,endSlot,type:'blocked',id:Date.now()+added}); added++; }
+  }
+  if (!added) { showToast(t('errConflict'),'error'); return; }
+  saveBookings(); renderSchedule(); renderBlockCheckboxes();
+  showToast(t('blockAdded'),'success');
+}
+
+// ===== LESSON CHECKBOX BOOKING =====
+function renderLessonCheckboxes() {
+  const grid = document.getElementById('lessonCheckboxGrid');
+  if (!grid) return;
+  const date = document.getElementById('lessonDate').value;
+  const room = parseInt(document.getElementById('lessonRoom').value);
+  const slots = getTimeSlots();
+  const bookings = date ? (state.bookings[date]||[]) : [];
+  // Group by hour for visual separation
+  let html = '';
+  let lastHour = -1;
+  for (let si = 0; si < slots.length - 1; si++) {
+    const timeStr = slots[si];
+    const hour = parseInt(timeStr.split(':')[0]);
+    if (hour !== lastHour) { html += `<div class="cb-section-label">${hour}:00</div>`; lastHour = hour; }
+    const conflict = bookings.some(b => b.room===room && b.startSlot<=si && b.endSlot>si);
+    const conflictClass = conflict ? ' conflict' : '';
+    html += `<div class="lesson-cb-row${conflictClass}" id="cbrow_${si}" onclick="toggleLessonCb(${si},${conflict})">
+      <input type="checkbox" id="lessonCb_${si}" ${conflict?'disabled':''}>
+      <label for="lessonCb_${si}">${timeStr} ~ ${slots[si+1]}</label>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  // Sync checked state visual
+  grid.querySelectorAll('.lesson-cb-row:not(.conflict)').forEach(row => {
+    const cb = row.querySelector('input');
+    if (cb) cb.addEventListener('change', () => row.classList.toggle('checked', cb.checked));
+  });
+}
+
+function toggleLessonCb(si, conflict) {
+  if (conflict) return;
+  const cb = document.getElementById(`lessonCb_${si}`);
+  if (cb && !cb.disabled) {
+    cb.checked = !cb.checked;
+    document.getElementById(`cbrow_${si}`).classList.toggle('checked', cb.checked);
+  }
+}
+
+function populateLessonInstructors() {
+  const sel = document.getElementById('lessonInstructor');
+  sel.innerHTML = `<option value="">--</option>`;
+  state.instructors.forEach(i => { const o=document.createElement('option'); o.value=i.id; o.textContent=getName(i); sel.appendChild(o); });
+}
+
+function addLessonBooking() {
+  const date = document.getElementById('lessonDate').value;
+  const room = parseInt(document.getElementById('lessonRoom').value);
+  const instructorId = parseInt(document.getElementById('lessonInstructor').value);
+  if (!date) { showToast(t('errTimeMissing'), 'error'); return; }
+  if (!instructorId) { showToast(t('errNoInstructor'), 'error'); return; }
+  const slots = getTimeSlots();
+  // Collect checked slots
+  const checkedSlots = [];
+  for (let si = 0; si < slots.length - 1; si++) {
+    const cb = document.getElementById(`lessonCb_${si}`);
+    if (cb && cb.checked) checkedSlots.push(si);
+  }
+  if (!checkedSlots.length) { showToast(t('errNoSlots'), 'error'); return; }
+  if (!state.bookings[date]) state.bookings[date] = [];
+  // Group consecutive slots into bookings
+  let groups = [];
+  let cur = [checkedSlots[0]];
+  for (let i = 1; i < checkedSlots.length; i++) {
+    if (checkedSlots[i] === checkedSlots[i-1]+1) { cur.push(checkedSlots[i]); }
+    else { groups.push(cur); cur = [checkedSlots[i]]; }
+  }
+  groups.push(cur);
+  // Check conflicts and add
+  let added = 0;
+  for (const g of groups) {
+    const startSlot = g[0], endSlot = g[g.length-1]+1;
+    const conflict = state.bookings[date].some(b=>b.room===room&&b.startSlot<endSlot&&b.endSlot>startSlot);
+    if (!conflict) { state.bookings[date].push({room,startSlot,endSlot,instructorId,type:'lesson',id:Date.now()+added}); added++; }
+  }
+  if (!added) { showToast(t('errConflict'), 'error'); return; }
+  saveBookings(); renderSchedule(); renderLessonCheckboxes();
+  if (adminLoggedIn) renderUsageTable();
+  showToast(t('lessonAdded'), 'success');
+}
+
+// ===== USAGE TABLE =====
+function setUsageThisMonth() {
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('usageMonth').value = ym;
+  renderUsageTable();
+}
+
+function renderUsageTable() {
+  const monthVal = document.getElementById('usageMonth') ? document.getElementById('usageMonth').value : '';
+  const tbody = document.getElementById('usageBody'); if (!tbody) return;
+  const sorted = getSortedStudents();
+  if (!sorted.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${t('noStudents')}</td></tr>`; return; }
+  const rows = sorted.map(s => {
+    // Gather daily totals for the selected period
+    const dailyTotals = {}; // {dk: hours}
+    Object.keys(state.bookings).forEach(dk => {
+      if (monthVal && !dk.startsWith(monthVal)) return;
+      let daySlots = 0;
+      (state.bookings[dk]||[]).forEach(b => {
+        if (b.type==='student' && b.studentId===s.id) daySlots += (b.endSlot - b.startSlot);
+      });
+      if (daySlots > 0) dailyTotals[dk] = (dailyTotals[dk]||0) + daySlots * 0.5;
+    });
+    const totalHours = Object.values(dailyTotals).reduce((a,v)=>a+v, 0);
+    const maxDayHours = Object.values(dailyTotals).length ? Math.max(...Object.values(dailyTotals)) : 0;
+
+    // Find course daily limit
+    const cl = state.courseLimits.find(c => c.name.trim().toLowerCase() === (s.course||'').trim().toLowerCase());
+    const limitHours = cl ? (cl.dailyHours || cl.monthlyHours || null) : null; // fallback for old data
+    const over = limitHours && maxDayHours > limitHours;
+    const pct = limitHours ? Math.min(100, (maxDayHours / limitHours) * 100) : 0;
+
+    const inst = state.instructors.find(i=>i.id===s.instructorId);
+    const instHtml = inst ? `<span class="color-dot" style="background:${inst.color}"></span>${getName(inst)}` : '-';
+    const limitText = limitHours ? `${limitHours}${t('hours')}/${lang==='ja'?'日':'일'}` : t('unlimited');
+    const maxDayText = `<span style="font-size:11px;color:var(--text2)"> (최대 ${maxDayHours}${t('hours')}/일)</span>`;
+    const barHtml = limitHours
+      ? `<div class="usage-bar-wrap"><div class="usage-bar"><div class="usage-bar-fill${over?' over':''}" style="width:${pct}%"></div></div><span class="usage-hours">${Math.round(pct)}%</span></div>`
+      : '<span style="color:var(--text3)">-</span>';
+    return `<tr>
+      <td style="font-weight:600">${getName(s)||'-'}</td>
+      <td>${s.course||'-'}</td>
+      <td>${instHtml}</td>
+      <td style="font-weight:700;color:${over?'var(--danger)':'var(--text)'}">
+        ${totalHours}${t('hours')}
+        ${limitHours ? maxDayText : ''}
+      </td>
+      <td style="color:var(--text2)">${limitText}</td>
+      <td>${barHtml}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = rows.join('');
+}
+
+// ===== STUDENTS =====
+function populateStudentInstructors() {
+  const sel = document.getElementById('stuInstructor');
+  sel.innerHTML = `<option value="">--</option>`;
+  state.instructors.forEach(i => { const o=document.createElement('option'); o.value=i.id; o.textContent=getName(i); sel.appendChild(o); });
+}
+
+function addStudent() {
+  const nameKo = document.getElementById('stuNameKo').value.trim();
+  const nameJa = document.getElementById('stuNameJa').value.trim();
+  const course = document.getElementById('stuCourse').value.trim();
+  const instructorId = parseInt(document.getElementById('stuInstructor').value)||0;
+  const memo = document.getElementById('stuMemo').value.trim();
+  if (!nameKo && !nameJa) { showToast(t('errNameMissing'), 'error'); return; }
+  state.students.push({id:Date.now(), nameKo, nameJa, course, instructorId, memo});
+  ['stuNameKo','stuNameJa','stuCourse','stuMemo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('stuInstructor').value='';
+  saveStudents(); renderStudentTable(); renderUsageTable();
+  showToast(t('studentAdded'), 'success');
+}
+
+function sortStudents(col) {
+  studentSort = studentSort.col===col ? {col, dir:studentSort.dir==='asc'?'desc':'asc'} : {col, dir:'asc'};
+  studentPage = 1; renderStudentTable();
+}
+
+function getSortedStudents() {
+  return [...state.students].sort((a,b) => {
+    const av=(a[studentSort.col]||'').toLowerCase(), bv=(b[studentSort.col]||'').toLowerCase();
+    return studentSort.dir==='asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+}
+
+function renderStudentTable() {
+  ['nameKo','nameJa','course'].forEach(col => {
+    const th = document.getElementById('thStu'+col.charAt(0).toUpperCase()+col.slice(1));
+    if (th) th.className = 'sortable' + (studentSort.col===col ? ' '+studentSort.dir : '');
+  });
+  const sorted = getSortedStudents();
+  const tbody = document.getElementById('studentBody');
+  if (!sorted.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${t('noStudents')}</td></tr>`;
+    document.getElementById('studentPagination').innerHTML = ''; return;
+  }
+  const totalPages = Math.ceil(sorted.length / STUDENTS_PER_PAGE);
+  if (studentPage > totalPages) studentPage = totalPages;
+  const pageItems = sorted.slice((studentPage-1)*STUDENTS_PER_PAGE, studentPage*STUDENTS_PER_PAGE);
+  tbody.innerHTML = pageItems.map(s => {
+    const inst = state.instructors.find(i=>i.id===s.instructorId);
+    const instHtml = inst ? `<span class="color-dot" style="background:${inst.color}"></span>${getName(inst)}` : '-';
+    const delLabel = lang==='ja'?'削除':'삭제';
+    const editLabel = lang==='ja'?'編集':'수정';
+    return `<tr id="sturow_${s.id}">
+      <td>${s.nameKo||'-'}</td><td>${s.nameJa||'-'}</td><td>${s.course||'-'}</td>
+      <td>${instHtml}</td>
+      <td style="color:var(--text2);font-size:12px">${s.memo||'-'}</td>
+      <td style="white-space:nowrap;display:flex;gap:4px">
+        <button class="btn btn-edit btn-sm" onclick="startEditStudent(${s.id})">${editLabel}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id})">${delLabel}</button>
+      </td>
+    </tr>`;
+  }).join('');
+  // Pagination
+  const pg = document.getElementById('studentPagination');
+  if (totalPages <= 1) { pg.innerHTML=''; return; }
+  let pgHtml = `<button class="page-btn" onclick="gotoStudentPage(${studentPage-1})" ${studentPage===1?'disabled':''}>◀</button>`;
+  for (let p=1;p<=totalPages;p++) pgHtml += `<button class="page-btn${p===studentPage?' active':''}" onclick="gotoStudentPage(${p})">${p}</button>`;
+  pgHtml += `<button class="page-btn" onclick="gotoStudentPage(${studentPage+1})" ${studentPage===totalPages?'disabled':''}>▶</button>`;
+  pgHtml += `<span class="page-info">${studentPage} / ${totalPages}</span>`;
+  pg.innerHTML = pgHtml;
+}
+
+function gotoStudentPage(p) {
+  const totalPages = Math.ceil(state.students.length / STUDENTS_PER_PAGE);
+  if (p < 1 || p > totalPages) return;
+  studentPage = p; renderStudentTable();
+}
+
+function deleteStudent(id) {
+  if (!confirm(t('confirm'))) return;
+  state.students = state.students.filter(s=>s.id!==id);
+  saveStudents(); renderStudentTable(); renderUsageTable();
+  showToast(t('deleted'), 'success');
+}
+
+function startEditStudent(id) {
+  const s = state.students.find(x=>x.id===id); if (!s) return;
+  const row = document.getElementById(`sturow_${id}`); if (!row) return;
+  row.classList.add('editing');
+  const instOptions = state.instructors.map(i =>
+    `<option value="${i.id}" ${s.instructorId===i.id?'selected':''}>${getName(i)}</option>`
+  ).join('');
+  const saveLabel = lang==='ja'?'保存':'저장';
+  const cancelLabel = lang==='ja'?'キャンセル':'취소';
+  row.innerHTML = `
+    <td><input class="edit-input" id="es_nameKo_${id}" value="${s.nameKo||''}" style="width:110px"></td>
+    <td><input class="edit-input" id="es_nameJa_${id}" value="${s.nameJa||''}" style="width:110px"></td>
+    <td><input class="edit-input" id="es_course_${id}" value="${s.course||''}" style="width:130px"></td>
+    <td><select class="edit-input" id="es_inst_${id}" style="width:120px">
+      <option value="">--</option>${instOptions}
+    </select></td>
+    <td><input class="edit-input" id="es_memo_${id}" value="${s.memo||''}" style="width:140px"></td>
+    <td style="white-space:nowrap;display:flex;gap:4px">
+      <button class="btn btn-primary btn-sm" onclick="saveEditStudent(${id})">${saveLabel}</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderStudentTable()">${cancelLabel}</button>
+    </td>`;
+}
+
+function saveEditStudent(id) {
+  const s = state.students.find(x=>x.id===id); if (!s) return;
+  s.nameKo = document.getElementById(`es_nameKo_${id}`).value.trim();
+  s.nameJa = document.getElementById(`es_nameJa_${id}`).value.trim();
+  s.course = document.getElementById(`es_course_${id}`).value.trim();
+  s.instructorId = parseInt(document.getElementById(`es_inst_${id}`).value)||0;
+  s.memo = document.getElementById(`es_memo_${id}`).value.trim();
+  saveStudents(); renderStudentTable(); renderUsageTable();
+  showToast(lang==='ja'?'保存しました。':'저장되었습니다.', 'success');
+}
+
+// ===== INSTRUCTORS =====
+function addInstructor() {
+  const nameKo=document.getElementById('instNameKo').value.trim();
+  const nameJa=document.getElementById('instNameJa').value.trim();
+  const color=document.getElementById('instColor').value;
+  if (!nameKo && !nameJa) { showToast(t('errNameMissing'),'error'); return; }
+  state.instructors.push({id:Date.now(), nameKo, nameJa, color});
+  ['instNameKo','instNameJa'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('instColor').value='#7c6af7';
+  saveInstructors(); renderInstructorTable(); populateLessonInstructors(); populateStudentInstructors();
+  showToast(t('instructorAdded'),'success');
+}
+
+function renderInstructorTable() {
+  const tbody=document.getElementById('instructorBody');
+  if (!state.instructors.length) { tbody.innerHTML=`<tr><td colspan="4" class="empty-state">${t('noInstructors')}</td></tr>`; return; }
+  const editLabel = lang==='ja'?'編集':'수정';
+  const delLabel = lang==='ja'?'削除':'삭제';
+  tbody.innerHTML=state.instructors.map(i=>`<tr id="instrow_${i.id}">
+    <td>${i.nameKo||'-'}</td><td>${i.nameJa||'-'}</td>
+    <td><span class="color-dot" style="background:${i.color}"></span>${i.color}
+      <input type="color" value="${i.color}" onchange="updateInstructorColor(${i.id},this.value)" style="margin-left:6px">
+    </td>
+    <td style="white-space:nowrap;display:flex;gap:4px">
+      <button class="btn btn-edit btn-sm" onclick="startEditInstructor(${i.id})">${editLabel}</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteInstructor(${i.id})">${delLabel}</button>
+    </td>
+  </tr>`).join('');
+}
+
+function updateInstructorColor(id, color) {
+  const inst=state.instructors.find(i=>i.id===id);
+  if (inst) { inst.color=color; saveInstructors(); renderInstructorTable(); renderSchedule(); renderUsageTable(); }
+}
+
+function deleteInstructor(id) {
+  if (!confirm(t('confirm'))) return;
+  state.instructors=state.instructors.filter(i=>i.id!==id);
+  saveInstructors(); renderInstructorTable(); populateLessonInstructors(); populateStudentInstructors();
+  showToast(t('deleted'),'success');
+}
+
+function startEditInstructor(id) {
+  const inst = state.instructors.find(x=>x.id===id); if (!inst) return;
+  const row = document.getElementById(`instrow_${id}`); if (!row) return;
+  row.classList.add('editing');
+  const saveLabel = lang==='ja'?'保存':'저장';
+  const cancelLabel = lang==='ja'?'キャンセル':'취소';
+  row.innerHTML = `
+    <td><input class="edit-input" id="ei_nameKo_${id}" value="${inst.nameKo||''}" style="width:110px"></td>
+    <td><input class="edit-input" id="ei_nameJa_${id}" value="${inst.nameJa||''}" style="width:110px"></td>
+    <td><input type="color" id="ei_color_${id}" value="${inst.color}" style="width:36px;height:28px;border-radius:5px;border:1px solid var(--border);cursor:pointer">
+        <input class="edit-input" id="ei_colorHex_${id}" value="${inst.color}" style="width:90px;margin-left:6px"
+          oninput="syncColorPicker(${id})"></td>
+    <td style="white-space:nowrap;display:flex;gap:4px">
+      <button class="btn btn-primary btn-sm" onclick="saveEditInstructor(${id})">${saveLabel}</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderInstructorTable()">${cancelLabel}</button>
+    </td>`;
+  document.getElementById(`ei_color_${id}`).addEventListener('input', e => {
+    document.getElementById(`ei_colorHex_${id}`).value = e.target.value;
+  });
+}
+
+function syncColorPicker(id) {
+  const hex = document.getElementById(`ei_colorHex_${id}`).value;
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) document.getElementById(`ei_color_${id}`).value = hex;
+}
+
+function saveEditInstructor(id) {
+  const inst = state.instructors.find(x=>x.id===id); if (!inst) return;
+  inst.nameKo = document.getElementById(`ei_nameKo_${id}`).value.trim();
+  inst.nameJa = document.getElementById(`ei_nameJa_${id}`).value.trim();
+  const hex = document.getElementById(`ei_colorHex_${id}`).value.trim();
+  inst.color = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : document.getElementById(`ei_color_${id}`).value;
+  saveInstructors(); renderInstructorTable(); populateLessonInstructors(); populateStudentInstructors();
+  renderSchedule(); renderUsageTable();
+  showToast(lang==='ja'?'保存しました。':'저장되었습니다.', 'success');
+}
+
+// ===== COURSE LIMITS =====
+function addCourseLimit() {
+  const name=document.getElementById('clNameInput').value.trim();
+  const hours=parseFloat(document.getElementById('clHoursInput').value)||0;
+  if (!name) { showToast(t('errNameMissing'),'error'); return; }
+  if (!hours || hours<=0) { showToast(t('errTimeMissing'),'error'); return; }
+  const existing=state.courseLimits.findIndex(c=>c.name.trim().toLowerCase()===name.toLowerCase());
+  if (existing>=0) state.courseLimits[existing].dailyHours=hours;
+  else state.courseLimits.push({id:Date.now(), name, dailyHours:hours});
+  document.getElementById('clNameInput').value='';
+  document.getElementById('clHoursInput').value='2';
+  saveCourseLimits(); renderCourseLimits(); renderUsageTable();
+  showToast(lang==='ja'?'追加しました。':'추가되었습니다.','success');
+}
+
+function renderCourseLimits() {
+  const wrap=document.getElementById('courseLimitsWrap'); if (!wrap) return;
+  if (!state.courseLimits.length) { wrap.innerHTML=`<div style="color:var(--text3);font-size:13px;padding:8px 0">${lang==='ja'?'設定なし':'설정된 코스가 없습니다.'}</div>`; return; }
+  wrap.innerHTML=state.courseLimits.map(cl=>`
+    <div class="course-limit-row">
+      <span class="course-limit-name">${cl.name}</span>
+      <div class="course-limit-input-wrap">
+        <input type="number" class="form-control" value="${cl.dailyHours||cl.monthlyHours||1}" min="0.5" max="24" step="0.5" style="width:70px" onchange="updateCourseLimit(${cl.id},this.value)">
+        <span style="font-size:12px;color:var(--text2)">${t('hourUnit')}/${lang==='ja'?'日':'일'}</span>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteCourseLimit(${cl.id})">${lang==='ja'?'削除':'삭제'}</button>
+    </div>`).join('');
+}
+
+function updateCourseLimit(id, val) {
+  const cl=state.courseLimits.find(c=>c.id===id);
+  if (cl) { cl.dailyHours=parseFloat(val)||0.5; saveCourseLimits(); renderUsageTable(); }
+}
+
+function deleteCourseLimit(id) {
+  if (!confirm(t('confirm'))) return;
+  state.courseLimits=state.courseLimits.filter(c=>c.id!==id);
+  saveCourseLimits(); renderCourseLimits(); renderUsageTable();
+  showToast(t('deleted'),'success');
+}
+
+// ===== SETTINGS =====
+function initSettings() {
+  document.getElementById('maxSessionHours').value=state.settings.maxSessionHours;
+  document.getElementById('maxDailyHours').value=state.settings.maxDailyHours;
+  populateTimeSelects(); renderCourseLimits();
+}
+
+function changePassword() {
+  const pw=document.getElementById('newPwInput').value.trim();
+  if (!pw) { showToast(t('errPwMissing'),'error'); return; }
+  state.settings.password=pw; saveSettings();
+  document.getElementById('newPwInput').value='';
+  showToast(t('pwChanged'),'success');
+}
+
+// ===== NOTICES =====
+let noticeCollapsed = false;
+function renderNoticeBanner() {
+  const banner=document.getElementById('noticeBanner');
+  const list=document.getElementById('noticeList');
+  const btn=document.getElementById('noticeToggleBtn');
+  const titleEl=document.getElementById('noticeTitle');
+  if (titleEl) titleEl.textContent=t('noticeTitle');
+  if (!state.notices||!state.notices.length) { banner.style.display='none'; return; }
+  banner.style.display='flex';
+  list.innerHTML=state.notices.map(n=>`<li>${lang==='ja'?(n.textJa||n.textKo||''):(n.textKo||n.textJa||'')}</li>`).join('');
+  list.style.display=noticeCollapsed?'none':'flex';
+  btn.textContent=noticeCollapsed?t('noticeExpand'):t('noticeCollapse');
+}
+function toggleNotice() { noticeCollapsed=!noticeCollapsed; renderNoticeBanner(); }
+function renderNoticeAdmin() {
+  const tbody=document.getElementById('noticeBody'); if (!tbody) return;
+  if (!state.notices||!state.notices.length) { tbody.innerHTML=`<tr><td colspan="3" class="empty-state">${t('noNotices')}</td></tr>`; return; }
+  const editLabel = lang==='ja'?'編集':'수정';
+  const delLabel = lang==='ja'?'削除':'삭제';
+  tbody.innerHTML=state.notices.map(n=>`<tr id="noticerow_${n.id}">
+    <td>${n.textKo||'-'}</td><td>${n.textJa||'-'}</td>
+    <td style="white-space:nowrap;display:flex;gap:4px">
+      <button class="btn btn-edit btn-sm" onclick="startEditNotice(${n.id})">${editLabel}</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteNotice(${n.id})">${delLabel}</button>
+    </td>
+  </tr>`).join('');
+}
+function addNotice() {
+  const ko=document.getElementById('noticeInputKo').value.trim();
+  const ja=document.getElementById('noticeInputJa').value.trim();
+  if (!ko&&!ja) { showToast(t('errNameMissing'),'error'); return; }
+  if (!state.notices) state.notices=[];
+  state.notices.push({id:Date.now(), textKo:ko, textJa:ja});
+  document.getElementById('noticeInputKo').value=''; document.getElementById('noticeInputJa').value='';
+  saveNotices(); renderNoticeBanner(); renderNoticeAdmin();
+  showToast(lang==='ja'?'追加しました。':'추가되었습니다.','success');
+}
+function deleteNotice(id) {
+  if (!confirm(t('confirm'))) return;
+  state.notices=state.notices.filter(n=>n.id!==id);
+  saveNotices(); renderNoticeBanner(); renderNoticeAdmin(); showToast(t('deleted'),'success');
+}
+
+function startEditNotice(id) {
+  const n = state.notices.find(x=>x.id===id); if (!n) return;
+  const row = document.getElementById(`noticerow_${id}`); if (!row) return;
+  row.classList.add('editing');
+  const saveLabel = lang==='ja'?'保存':'저장';
+  const cancelLabel = lang==='ja'?'キャンセル':'취소';
+  row.innerHTML = `
+    <td><input class="edit-input" id="en_ko_${id}" value="${(n.textKo||'').replace(/"/g,'&quot;')}" style="width:100%"></td>
+    <td><input class="edit-input" id="en_ja_${id}" value="${(n.textJa||'').replace(/"/g,'&quot;')}" style="width:100%"></td>
+    <td style="white-space:nowrap;display:flex;gap:4px">
+      <button class="btn btn-primary btn-sm" onclick="saveEditNotice(${id})">${saveLabel}</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderNoticeAdmin()">${cancelLabel}</button>
+    </td>`;
+}
+
+function saveEditNotice(id) {
+  const n = state.notices.find(x=>x.id===id); if (!n) return;
+  n.textKo = document.getElementById(`en_ko_${id}`).value.trim();
+  n.textJa = document.getElementById(`en_ja_${id}`).value.trim();
+  saveNotices(); renderNoticeBanner(); renderNoticeAdmin();
+  showToast(lang==='ja'?'保存しました。':'저장되었습니다.', 'success');
+}
+
+// ===== AUTH =====
+let pinValue = '';
+const MAX_PIN_DISPLAY = 8; // show up to 8 dots
+
+function renderPinDots() {
+  const display = document.getElementById('pinDisplay');
+  if (!display) return;
+  const len = Math.max(pinValue.length, Math.min(state.settings.password.length, MAX_PIN_DISPLAY));
+  display.innerHTML = Array.from({length: len}, (_, i) =>
+    `<div class="pin-dot${i < pinValue.length ? ' filled' : ''}"></div>`
+  ).join('');
+}
+
+function kpPress(digit) {
+  if (pinValue.length >= 20) return; // safety cap
+  pinValue += digit;
+  document.getElementById('loginError').textContent = '';
+  renderPinDots();
+}
+
+function kpDelete() {
+  pinValue = pinValue.slice(0, -1);
+  document.getElementById('loginError').textContent = '';
+  renderPinDots();
+}
+
+function doAdminLogin() {
+  if (pinValue === state.settings.password) {
+    adminLoggedIn = true;
+    document.getElementById('loginError').textContent = '';
+    pinValue = '';
+    renderPinDots();
+    goPage('admin');
+  } else {
+    document.getElementById('loginError').textContent = t('loginError');
+    // Shake animation
+    const dots = document.getElementById('pinDisplay');
+    dots.style.animation = 'none';
+    dots.offsetWidth; // reflow
+    dots.style.animation = 'pinShake .35s ease';
+    setTimeout(() => { pinValue = ''; renderPinDots(); document.getElementById('loginError').textContent = ''; }, 900);
+  }
+}
+
+function doLogout() { adminLoggedIn = false; pinValue = ''; goPage('booking'); }
+
+// ===== PAGE NAV =====
+function goPage(page) {
+  if (page==='admin') {
+    if (!adminLoggedIn) { showPage('pageAdminLogin'); return; }
+    showPage('pageAdmin');
+    renderUsageTable(); renderStudentTable(); renderInstructorTable();
+    populateLessonInstructors(); populateStudentInstructors();
+    initSettings(); renderLessonCheckboxes();
+    document.getElementById('blockDate').value = dateKey(new Date());
+    renderBlockCheckboxes();
+    setUsageThisMonth();
+  } else { showPage('pageBooking'); }
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const isBooking=(id==='pageBooking'), isAdmin=(id==='pageAdmin');
+  document.getElementById('navBooking').className='btn btn-ghost btn-sm nav-btn'+(isBooking?' nav-active':'');
+  document.getElementById('navAdmin').className='btn btn-primary btn-sm nav-btn'+(isAdmin?' nav-active':'');
+  if (id === 'pageAdminLogin') { pinValue = ''; renderPinDots(); }
+}
+
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+  document.getElementById('panel'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+  if (tab==='settings') { renderNoticeAdmin(); renderCourseLimits(); }
+}
+
+// ===== TOAST =====
+function showToast(msg, type='') {
+  const el=document.getElementById('toast'); el.textContent=msg; el.className='toast '+type;
+  void el.offsetWidth; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ===== RENDER ALL =====
+function renderAll() { renderSchedule(); applyI18n(); populateTimeSelects(); renderNoticeBanner(); }
+
+// ===== INIT =====
+(async function init() {
+  await loadState();
+  document.getElementById('lessonDate').value = dateKey(new Date());
+  document.getElementById('blockDate').value = dateKey(new Date());
+  applyI18n();
+  setUsageThisMonth();
+})();
+</script>
+</body>
+</html>
