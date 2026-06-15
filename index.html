@@ -371,6 +371,33 @@
       </div>
     </div>
 
+    <!-- LESSON / BLOCK LIST -->
+    <div class="card">
+      <div class="card-title">🗂 <span id="adminListTitle">등록된 예약 목록</span></div>
+      <div class="inline-form" style="margin-bottom:14px; gap:12px;">
+        <div class="form-group" style="margin-bottom:0">
+          <label id="lblAdminListDate">날짜</label>
+          <input type="date" class="form-control" id="adminListDate" style="width:160px" oninput="renderAdminList()">
+        </div>
+        <div class="form-group" style="margin-bottom:0; align-self:flex-end;">
+          <button class="btn btn-ghost btn-sm" onclick="setAdminListToday()" id="btnAdminListToday">오늘</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th id="thAdminDate">날짜</th>
+            <th id="thAdminRoom">연습실</th>
+            <th id="thAdminTime">시간</th>
+            <th id="thAdminTarget">강사/내용</th>
+            <th id="thAdminType">유형</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="adminListBody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- USAGE SUMMARY -->
     <div class="card">
       <div class="card-title">📊 <span id="allBookingsTitle">수강생별 연습시간 현황</span></div>
@@ -701,6 +728,9 @@ const i18n = {
     typeBlocked:'이용 불가', lessonNoCancelNote:'강사 레슨은 예약표에서 취소할 수 없습니다. 관리자 페이지에서 취소해주세요.',
     cancelConfirmTitle:'예약 취소', cancelConfirmMsg:'예약을 취소하겠습니까?',
     cancelPartialLabel:'취소할 시간 선택', btnConfirmCancel:'취소 확정', btnBack:'돌아가기',
+    adminListTitle:'등록된 예약 목록', lblAdminListDate:'날짜',
+    thAdminDate:'날짜', thAdminRoom:'연습실', thAdminTime:'시간', thAdminTarget:'강사/내용', thAdminType:'유형',
+    confirmCancelLesson:'이 레슨/이용불가 시간을 취소하겠습니까?',
     bookingSuccess:'예약이 완료되었습니다.', bookingCancelled:'예약이 취소되었습니다.',
     lessonAdded:'레슨이 등록되었습니다.', settingsSaved:'설정이 저장되었습니다.',
     studentAdded:'수강생이 추가되었습니다.', instructorAdded:'강사가 추가되었습니다.',
@@ -756,6 +786,9 @@ const i18n = {
     typeBlocked:'利用不可', lessonNoCancelNote:'インストラクターのレッスンは予約表からキャンセルできません。管理者ページからキャンセルしてください。',
     cancelConfirmTitle:'予約キャンセル', cancelConfirmMsg:'予約をキャンセルしますか？',
     cancelPartialLabel:'キャンセルする時間を選択', btnConfirmCancel:'キャンセル確定', btnBack:'戻る',
+    adminListTitle:'登録済み予約一覧', lblAdminListDate:'日付',
+    thAdminDate:'日付', thAdminRoom:'練習室', thAdminTime:'時間', thAdminTarget:'講師/内容', thAdminType:'種別',
+    confirmCancelLesson:'このレッスン/利用不可時間をキャンセルしますか？',
     bookingSuccess:'予約が完了しました。', bookingCancelled:'予約がキャンセルされました。',
     lessonAdded:'レッスンが登録されました。', settingsSaved:'設定が保存されました。',
     studentAdded:'受講生が追加されました。', instructorAdded:'インストラクターが追加されました。',
@@ -1192,8 +1225,65 @@ function addBlockBooking() {
     if (!conflict) { state.bookings[date].push({room,startSlot,endSlot,type:'blocked',id:Date.now()+added}); added++; }
   }
   if (!added) { showToast(t('errConflict'),'error'); return; }
-  saveBookings(); renderSchedule(); renderBlockCheckboxes();
+  saveBookings(); renderSchedule(); renderBlockCheckboxes(); renderAdminList();
   showToast(t('blockAdded'),'success');
+}
+
+// ===== ADMIN BOOKING LIST (lesson + blocked) =====
+function setAdminListToday() {
+  document.getElementById('adminListDate').value = dateKey(new Date());
+  renderAdminList();
+}
+
+function renderAdminList() {
+  const tbody = document.getElementById('adminListBody'); if (!tbody) return;
+  const filterDate = document.getElementById('adminListDate').value;
+  const slots = getTimeSlots();
+
+  // Collect lesson + blocked entries
+  let rows = [];
+  Object.keys(state.bookings).forEach(dk => {
+    if (filterDate && dk !== filterDate) return;
+    (state.bookings[dk]||[]).forEach(b => {
+      if (b.type === 'lesson' || b.type === 'blocked') rows.push({dk, b});
+    });
+  });
+  rows.sort((a,b) => a.dk.localeCompare(b.dk) || a.b.room - b.b.room || a.b.startSlot - b.b.startSlot);
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${t('noBookings')}</td></tr>`; return;
+  }
+
+  tbody.innerHTML = rows.map(({dk, b}) => {
+    const timeStr = `${slots[b.startSlot] || ''} ~ ${slots[b.endSlot] || ''}`;
+    let targetHtml = '-', typeBadge = '';
+    if (b.type === 'lesson') {
+      const inst = state.instructors.find(i => i.id === b.instructorId);
+      const color = inst ? inst.color : 'var(--accent)';
+      targetHtml = inst
+        ? `<span class="color-dot" style="background:${color}"></span>${getName(inst)}`
+        : '-';
+      typeBadge = `<span class="badge" style="background:${color};color:${getContrastColor(color||'#7c6af7')}">${t('typeLesson')}</span>`;
+    } else {
+      typeBadge = `<span class="badge" style="background:#e8e6f0;color:#6b6490">🚫 ${t('typeBlocked')}</span>`;
+    }
+    return `<tr>
+      <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${dk}</td>
+      <td>${t('room')} ${b.room}</td>
+      <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${timeStr}</td>
+      <td>${targetHtml}</td>
+      <td>${typeBadge}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteAdminBooking('${dk}',${b.id})">${lang==='ja'?'取消':'취소'}</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteAdminBooking(dk, id) {
+  if (!confirm(t('confirmCancelLesson'))) return;
+  state.bookings[dk] = (state.bookings[dk]||[]).filter(b => b.id !== id);
+  saveBookings(); renderSchedule(); renderAdminList();
+  renderLessonCheckboxes(); renderBlockCheckboxes();
+  showToast(t('bookingCancelled'), 'success');
 }
 
 // ===== LESSON CHECKBOX BOOKING =====
@@ -1272,7 +1362,7 @@ function addLessonBooking() {
     if (!conflict) { state.bookings[date].push({room,startSlot,endSlot,instructorId,type:'lesson',id:Date.now()+added}); added++; }
   }
   if (!added) { showToast(t('errConflict'), 'error'); return; }
-  saveBookings(); renderSchedule(); renderLessonCheckboxes();
+  saveBookings(); renderSchedule(); renderLessonCheckboxes(); renderAdminList();
   if (adminLoggedIn) renderUsageTable();
   showToast(t('lessonAdded'), 'success');
 }
@@ -1709,6 +1799,7 @@ function goPage(page) {
     initSettings(); renderLessonCheckboxes();
     document.getElementById('blockDate').value = dateKey(new Date());
     renderBlockCheckboxes();
+    setAdminListToday();
     setUsageThisMonth();
   } else { showPage('pageBooking'); }
 }
